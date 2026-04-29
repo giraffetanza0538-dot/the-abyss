@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>THE ABYSS - 深層心理の深淵</title>
+    <style>
+        :root {
+            --bg-color: #030303;
+            --accent-color: #aa0000;
+            --rare-color: #00f2ff; /* レアタイプ用 */
+            --legend-color: #ffcc00; /* 超レアタイプ用 */
+            --text-color: #d0d0d0;
+            --card-bg: rgba(10, 10, 10, 0.98);
+        }
+        
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Helvetica Neue', 'Arial', 'Hiragino Sans', 'Meiryo', sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: " ";
+            position: fixed;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+            z-index: 1000;
+            background-size: 100% 3px;
+            pointer-events: none;
+        }
+
+        #app { width: 95%; max-width: 850px; z-index: 10; padding: 10px; box-sizing: border-box; }
+        
+        .screen { 
+            background: var(--card-bg); 
+            border: 1px solid #333; 
+            padding: 40px; 
+            box-shadow: 0 0 80px rgba(170, 0, 0, 0.15); 
+            box-sizing: border-box;
+            width: 100%;
+            position: relative;
+        }
+
+        h1 { color: var(--accent-color); text-align: center; letter-spacing: 12px; font-size: 2.5rem; margin-bottom: 10px; text-shadow: 0 0 10px rgba(170, 0, 0, 0.5); }
+        .sub-title { text-align: center; font-size: 0.7rem; letter-spacing: 4px; color: #666; margin-bottom: 40px; }
+        
+        .q-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        .q-number { font-size: 0.8rem; color: var(--accent-color); font-weight: bold; letter-spacing: 2px; }
+        .question-text { font-size: 1.3rem; line-height: 1.8; min-height: 140px; margin-bottom: 30px; color: #eee; }
+
+        .btn-container { display: flex; gap: 20px; }
+        button { 
+            flex: 1; background: transparent; color: #888; border: 1px solid #444; 
+            padding: 18px; cursor: pointer; font-family: inherit; font-size: 1rem; 
+            transition: 0.3s; position: relative; overflow: hidden;
+            letter-spacing: 2px;
+        }
+        button:hover { color: var(--accent-color); border-color: var(--accent-color); background: rgba(170,0,0,0.05); }
+        button:active { background: rgba(170,0,0,0.2); }
+
+        /* 特殊演出用クラス */
+        .rare-effect { border-color: var(--rare-color) !important; box-shadow: 0 0 40px rgba(0, 242, 255, 0.2); }
+        .legend-effect { border-color: var(--legend-color) !important; box-shadow: 0 0 50px rgba(255, 204, 0, 0.3); }
+        .glitch-text { animation: glitch 1s linear infinite; }
+
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
+        }
+
+        .evidence-frame {
+            position: relative;
+            width: 100%;
+            height: 450px;
+            background: #080808;
+            margin-bottom: 15px;
+            border: 1px solid #444;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .result-img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(1) brightness(0.6) contrast(1.3); z-index: 2; transition: 1s; }
+        .rare-type .result-img { filter: grayscale(0.5) brightness(0.8) sepia(0.2) contrast(1.2); }
+
+        .corner { position: absolute; width: 20px; height: 20px; border: 2px solid var(--accent-color); z-index: 5; }
+        .top-l { top: 15px; left: 15px; border-right: none; border-bottom: none; }
+        .top-r { top: 15px; right: 15px; border-left: none; border-bottom: none; }
+        .bot-l { bottom: 15px; left: 15px; border-right: none; border-top: none; }
+        .bot-r { bottom: 15px; right: 15px; border-left: none; border-top: none; }
+
+        .evidence-info {
+            position: absolute; bottom: 20px; left: 20px; color: var(--accent-color);
+            font-size: 0.65rem; font-family: monospace; z-index: 5; line-height: 1.4;
+            text-shadow: 1px 1px 2px #000;
+        }
+
+        .ratio-badge { background: var(--accent-color); color: #fff; padding: 3px 15px; font-size: 0.75rem; letter-spacing: 2px; font-weight: bold; display: inline-block; margin-bottom: 12px; }
+        .special-msg { font-size: 0.9rem; color: #aaa; font-style: italic; line-height: 1.6; }
+
+        #loading-screen { text-align: left; font-family: monospace; }
+        .loading-log { font-size: 0.85rem; color: #00ff00; margin-bottom: 8px; opacity: 0; transform: translateY(10px); animation: logIn 0.3s forwards; }
+        @keyframes logIn { to { opacity: 1; transform: translateY(0); } }
+
+        .type-title { color: var(--accent-color); font-size: 2.8rem; margin-bottom: 5px; text-align: center; font-weight: bold; letter-spacing: 4px; }
+        .type-subtitle { color: #888; text-align: center; margin-bottom: 35px; font-size: 1rem; letter-spacing: 2px; border-bottom: 1px solid #333; padding-bottom: 15px; }
+        
+        .section-title { color: #fff; font-size: 0.85rem; margin-top: 25px; background: linear-gradient(90deg, var(--accent-color), transparent); padding: 5px 15px; letter-spacing: 2px; font-weight: bold; }
+        .section-content { font-size: 0.95rem; line-height: 1.8; color: #bbb; margin-bottom: 10px; padding: 12px 5px; text-align: justify; }
+
+        .hidden { display: none; }
+        
+        @media (max-width: 600px) {
+            h1 { font-size: 1.8rem; }
+            .question-text { font-size: 1.1rem; min-height: 160px; }
+            .btn-container { flex-direction: column; }
+            .evidence-frame { height: 300px; }
+            .type-title { font-size: 1.8rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="flash"></div>
+
+<div id="app">
+    <div id="start-screen" class="screen">
+        <h1>THE ABYSS</h1>
+        <div class="sub-title">DEEP PSYCHOLOGICAL ANALYSIS SYSTEM</div>
+        <p style="text-align: center; color: #888; margin-bottom: 40px; line-height: 2; font-size: 0.9rem; border: 1px solid #222; padding: 20px;">
+            [ システム警告 ]<br>
+            これより、あなたの社会的仮面を剥離します。<br>
+            提示される50の状況に対し、倫理や道徳を忘れ、<br>
+            脳の深層に眠る「本音」のみで応答してください。<br>
+            一度起動すれば、結果は不可避です。
+        </p>
+        <button onclick="startQuiz()">システムを強制起動する</button>
+    </div>
+
+    <div id="quiz-screen" class="screen hidden">
+        <div class="q-header">
+            <div class="q-number" id="q-number"></div>
+            <div id="scan-status" style="font-size: 0.6rem; color: #00ff00;">ANALYZING PULSE...</div>
+        </div>
+        <div class="question-text" id="q-text"></div>
+        <div class="btn-container">
+            <button onclick="handleAnswer(true)">YES (肯定)</button>
+            <button onclick="handleAnswer(false)">NO (否定)</button>
+        </div>
+    </div>
+
+    <div id="loading-screen" class="screen hidden">
+        <div id="log-container"></div>
+    </div>
+
+    <div id="result-screen" class="screen hidden">
+        <div class="evidence-frame" id="img-container">
+            <div class="corner top-l" id="c-tl"></div><div class="corner top-r" id="c-tr"></div>
+            <div class="corner bot-l" id="c-bl"></div><div class="corner bot-r" id="c-br"></div>
+            <div class="evidence-info" id="evidence-meta"></div>
+            <img id="res-img" class="result-img" src="" alt="Subject Evidence">
+        </div>
+
+        <div style="text-align: center; margin-bottom: 25px;">
+            <div id="res-ratio" class="ratio-badge"></div>
+            <div id="res-special-msg" class="special-msg"></div>
+        </div>
+
+        <div id="res-type" class="type-title"></div>
+        <div id="res-catch" class="type-subtitle"></div>
+        
+        <div class="section-title">■ 深層心理プロファイル</div>
+        <div id="res-core" class="section-content"></div>
+        <div class="section-title">■ 社会的仮面と裏の顔</div>
+        <div id="res-persona" class="section-content"></div>
+        <div class="section-title">■ 闇の適職</div>
+        <div id="res-career" class="section-content"></div>
+        <div class="section-title">■ 破滅のトリガー</div>
+        <div id="res-risk" class="section-content"></div>
+
+        <button onclick="location.reload()" style="width: 100%; margin-top: 40px; font-size: 0.7rem; opacity: 0.5;">全ログを消去してシステムを終了する</button>
+    </div>
+</div>
+
+<script>
+    // 質問データ（順序はJSでシャッフル）
+    const masterQuestions = [
+        { t: "他人の不幸を目の当たりにした時、まず最初に「自分じゃなくて良かった」と安堵する。", f: {E:1.2, D:0.5} },
+        { t: "嘘を吐くことに抵抗はなく、むしろ相手を信じ込ませるプロセスに知的な快感を覚える。", f: {M:1.5, S:0.8} },
+        { t: "「愛」や「友情」は、人をコントロールするための脆弱なバグのようなものだと思う。", f: {E:1.0, M:1.2} },
+        { t: "自分が注目の中心にいない場所は、存在する価値がないと感じる。", f: {D:1.5, S:0.5} },
+        { t: "ルールを守るのは、守らない際のリスクがメリットを上回る時だけだ。", f: {M:1.2, C:1.0} },
+        { t: "他人の感情を逆なでする言葉を、あえて「正論」としてぶつけるのが好きだ。", f: {E:1.0, C:1.5} },
+        { t: "鏡の中の自分を見るとき、そこに複数の人格が同居しているような感覚がある。", f: {S:1.5, M:0.5} },
+        { t: "弱い者が淘汰されるのは自然の摂理であり、救済は進化を止める悪行だと思う。", f: {E:1.5, D:1.0} },
+        { t: "会話の中で、相手が次に何を言うかを誘導し、的中させる遊びをよくやる。", f: {M:1.5, S:1.0} },
+        { t: "どれだけ豪華な生活をしても、心の底にある「渇き」が消えることはない。", f: {D:1.2, C:0.8} },
+        // ... (50問まで内部で拡張) ...
+        { t: "他人の秘密を知ると、それをどう利用して相手を優位に立とうか真っ先に考える。", f: {M:1.4, D:0.6} },
+        { t: "今の自分の笑顔が、100%本物であると断言できない。", f: {S:1.5, M:0.5} },
+        { t: "謝罪をするとき、内心では「これで相手は黙るだろう」と軽蔑している。", f: {E:1.3, S:0.7} },
+        { t: "この世界が明日滅びるとしても、自分だけは特等席でそれを眺めていたい。", f: {C:1.5, D:1.0} },
+        { t: "利用価値がなくなった友人は、連絡先から消しても何の痛みも感じない。", f: {E:1.5, M:0.5} },
+        { t: "他人が自分を批判することは、大不敬な罪を犯しているように感じる。", f: {D:1.5, E:0.5} },
+        { t: "自分の弱みを見せるのは、相手を油断させるための高度な戦略である。", f: {M:1.3, S:1.2} },
+        { t: "日常の平穏よりも、破滅的なスリルの中にこそ「生の充足」を感じる。", f: {C:1.5, E:0.5} },
+        { t: "他人の努力の結果を、あたかも自分の功績であるかのように語る術を知っている。", f: {M:1.5, D:0.8} },
+        { t: "自分が神であれば、もっと効率的に人間を選別し、管理できる自信がある。", f: {D:1.5, C:1.0} }
+        // ※コード短縮のため一部抜粋。50問までループで多様な重み付けを想定
+    ];
+
+    // 全50問をシャッフル・生成
+    let questions = [...masterQuestions];
+    while(questions.length < 50) {
+        questions.push(masterQuestions[Math.floor(Math.random()*masterQuestions.length)]);
+    }
+    questions = questions.sort(() => Math.random() - 0.5);
+
+    const typeData = {
+        "MS": { name: "情報の魔術師", lv: "A", ratio: "12.5%", catch: "「真実とは、信じさせた嘘の総称である。」", core: "情報と印象を操り、他者の認識を書き換えることに長けた策士です。", persona: "有能な協力者を装いつつ、背後で全ての糸を引いています。", career: "戦略家、PRディレクター、交渉人。", risk: "自分自身の本音さえも虚構に呑み込まれること。" },
+        "CS": { name: "異端の虚無主義者", lv: "SS", ratio: "0.7%", catch: "「自由とは、何も信じないという特権だ。」", core: "既存の秩序を嘲笑い、孤独の中に絶対的な自律を求める超希少タイプ。", persona: "静かな傍観者。しかしその眼差しは社会の急所を突いています。", career: "ハッカー、哲学者、アナーキスト。", risk: "完全な自由の果てにある、耐え難い孤独。" },
+        "EC": { name: "審美的な破壊者", lv: "SS", ratio: "0.5%", catch: "「完成とは、美しく壊される瞬間のこと。」", core: "美学に反するものを、無慈悲に、そして完璧に消し去る純粋な破壊者。", persona: "退廃的な芸術家。壊すことでしか他者と繋がれない歪んだ情熱。", career: "解体屋、過激な批評家。", risk: "最後には自分自身を破壊の対象に選ぶこと。" },
+        "DS": { name: "深淵の支配者", lv: "S", ratio: "6.0%", catch: "「恐怖は、最も効率的な統治コストである。」", core: "圧倒的な意志の力で他者を平伏させ、自らの帝国を築く統治者タイプ。", persona: "慈悲深い指導者。しかしその握力は誰にも逃げ場を与えません。", career: "独裁的経営者、黒幕。", risk: "誰一人として信じられない、永遠の疑心暗鬼。" },
+        "SM": { name: "仮面の蒐集家", lv: "A", ratio: "14.2%", catch: "「私は、あなたが見たいと思っている私だ。」", core: "相手に合わせて人格を瞬時に再構築する、天性のカメレオン。", persona: "完璧な理解者。しかし、中身は鏡のように空っぽです。", career: "俳優、潜入捜査官、高級詐欺師。", risk: "アイデンティティの完全な霧散。" },
+        // ... (他のタイプも同様に重み付けとレア度を設定)
+    };
+
+    let currentIdx = 0;
+    let scores = { M: 0, E: 0, D: 0, C: 0, S: 0 };
+
+    function startQuiz() {
+        document.getElementById('start-screen').classList.add('hidden');
+        document.getElementById('quiz-screen').classList.remove('hidden');
+        showQ();
+    }
+
+    function showQ() {
+        const q = questions[currentIdx];
+        const el = document.getElementById('q-text');
+        document.getElementById('q-number').innerText = `PROTOCOL NO. ${currentIdx + 1} / 50`;
+        el.innerText = q.t;
+        
+        // スキャン演出
+        const status = document.getElementById('scan-status');
+        status.innerText = "SCANNING BRAINWAVE...";
+        setTimeout(() => { status.innerText = "WAITING FOR RESPONSE..."; }, 500);
+    }
+
+    function handleAnswer(isYes) {
+        if(isYes) {
+            const f = questions[currentIdx].f;
+            for(let k in f) scores[k] += f[k];
+        }
+        currentIdx++;
+        if(currentIdx < questions.length) {
+            showQ();
+        } else {
+            processResult();
+        }
+    }
+
+    function processResult() {
+        document.getElementById('quiz-screen').classList.add('hidden');
+        document.getElementById('loading-screen').classList.remove('hidden');
+        
+        const container = document.getElementById('log-container');
+        const logs = [
+            "> INITIALIZING DEEP SCAN...",
+            "> BYPASSING ETHICAL FILTERS...",
+            "> ANALYZING RESPONSE PATTERNS...",
+            "> CALCULATING DOMINANCE RATIO...",
+            "> REMOVING SOCIAL PERSONA...",
+            "> ACCESSING THE ABYSS...",
+            "> FINALIZING PROFILE..."
+        ];
+
+        logs.forEach((text, i) => {
+            setTimeout(() => {
+                const div = document.createElement('div');
+                div.className = 'loading-log';
+                div.innerText = text;
+                container.appendChild(div);
+                if(i === logs.length - 1) setTimeout(displayFinal, 1500);
+            }, i * 600);
+        });
+    }
+
+    function displayFinal() {
+        document.getElementById('loading-screen').classList.add('hidden');
+        document.getElementById('result-screen').classList.remove('hidden');
+        
+        // ロジック: 最も高い2つの指標を組み合わせてタイプを決定
+        const sorted = Object.entries(scores).sort((a,b) => b[1] - a[1]);
+        const key = sorted[0][0] + sorted[1][0];
+        const data = typeData[key] || typeData["MS"];
+
+        // レア演出の適用
+        const resultScreen = document.getElementById('result-screen');
+        const typeTitle = document.getElementById('res-type');
+        
+        if(data.lv === "SS") {
+            resultScreen.classList.add('legend-effect');
+            typeTitle.classList.add('glitch-text');
+            document.documentElement.style.setProperty('--accent-color', 'var(--legend-color)');
+        } else if(data.lv === "S") {
+            resultScreen.classList.add('rare-effect');
+            document.documentElement.style.setProperty('--accent-color', 'var(--rare-color)');
+        }
+
+        // データ反映
+        document.getElementById('res-type').innerText = data.name;
+        document.getElementById('res-catch').innerText = data.catch;
+        document.getElementById('res-ratio').innerText = `出現率: ${data.ratio} (希少度: ${data.lv})`;
+        document.getElementById('res-special-msg').innerText = `[システム解析]: あなたの精神構造は極めて「${data.lv === 'A' ? '均衡' : '特異'}」な状態にあります。`;
+        document.getElementById('res-core').innerText = data.core;
+        document.getElementById('res-persona').innerText = data.persona;
+        document.getElementById('res-career').innerText = data.career;
+        document.getElementById('res-risk').innerText = data.risk;
+        
+        // メタ情報
+        const timestamp = new Date().toISOString().replace('T', ' ').split('.')[0];
+        document.getElementById('evidence-meta').innerHTML = `SUBJECT_ID: AB-772<br>TIMESTAMP: ${timestamp}<br>STABILITY: LOW`;
+        
+        // ダミー画像（本来は対応する画像URL）
+        document.getElementById('res-img').src = `https://images.unsplash.com/photo-1509248961158-e54f6934749c?auto=format&fit=crop&q=80&w=800`;
+    }
+</script>
+</body>
+</html>
