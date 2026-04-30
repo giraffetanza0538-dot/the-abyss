@@ -310,7 +310,7 @@
     function preloadImages() {
         Object.keys(typeData).forEach(key => {
             const img = new Image();
-            img.src = `images/${key}.jpg`; // 直接修正
+            img.src = `images/${key}.jpg`;
         });
     }
 
@@ -319,7 +319,7 @@
             img.dataset.retried = "true";
             setTimeout(() => {
                 const key = img.src.split('/').pop().split('.')[0];
-                img.src = `images/${key}.jpg`;
+                if(key && key !== "") img.src = `images/${key}.jpg`;
             }, 1000);
         } else {
             const frameEl = document.getElementById('img-container');
@@ -399,15 +399,25 @@
         const resScreen = document.getElementById('result-screen');
         resScreen.classList.remove('hidden');
         
-        const scoreEntries = Object.entries(scores);
-        for (let i = scoreEntries.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [scoreEntries[i], scoreEntries[j]] = [scoreEntries[j], scoreEntries[i]];
-        }
-        const sorted = scoreEntries.sort((a,b) => b[1] - a[1]);
+        // 判定ロジックをより堅牢に修正
+        const sorted = Object.entries(scores).sort((a,b) => b[1] - a[1]);
         
-        const key = sorted[0][0] + sorted[1][0];
-        const data = typeData[key] || typeData["MS"];
+        // スコアが全く同じ場合を考慮し、デフォルト値を設定
+        let char1 = sorted[0] ? sorted[0][0] : "M";
+        let char2 = sorted[1] ? sorted[1][0] : "S";
+        
+        let key = char1 + char2;
+        
+        // 組み合わせが存在しない場合の逆引き
+        if (!typeData[key]) {
+            key = char2 + char1;
+        }
+        // それでもない場合の最終フォールバック
+        if (!typeData[key]) {
+            key = "MS";
+        }
+        
+        const data = typeData[key];
 
         if(data.isRare) {
             resScreen.classList.add('rare-effect');
@@ -415,7 +425,7 @@
         }
 
         const imgEl = document.getElementById('res-img');
-        imgEl.src = `images/${key}.jpg`; // 直接修正
+        imgEl.src = `images/${key}.jpg`;
         
         document.getElementById('res-type').innerText = data.name;
         document.getElementById('res-catch').innerText = data.catch;
