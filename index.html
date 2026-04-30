@@ -219,6 +219,42 @@
             <div id="res-final-text" style="font-size: 0.95rem; line-height: 2; color: #fff; text-align: justify; font-style: italic; background: rgba(170, 0, 0, 0.05); padding: 20px; border-radius: 5px;"></div>
         </div>
 
+<!-- 共有セクションの追加 -->
+<div id="share-section" style="margin-top: 30px; text-align: center; background: rgba(170, 0, 0, 0.1); padding: 20px; border: 1px solid var(--accent-color);">
+    <div style="font-size: 0.8rem; color: var(--accent-color); letter-spacing: 2px; margin-bottom: 15px;">[ DATA EXPORT / SHARE ]</div>
+    
+    <!-- URLコピー欄 -->
+    <div style="display: flex; gap: 5px; margin-bottom: 15px;">
+        <input type="text" id="share-url" readonly style="flex: 1; background: #000; color: #888; border: 1px solid #444; padding: 10px; font-size: 0.8rem;" value="">
+        <button onclick="copyURL()" style="flex: none; width: auto; padding: 0 15px; font-size: 0.7rem; border-color: var(--accent-color);">COPY</button>
+    </div>
+
+    <!-- X 投稿ボタン -->
+    <button onclick="shareX()" style="background: #000; color: #fff; border: 1px solid #fff; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path></svg>
+        Xで深淵を共有する
+    </button>
+</div>
+
+<script>
+// 共有用のスクリプト
+function copyURL() {
+    const copyTarget = document.getElementById("share-url");
+    copyTarget.value = window.location.href; // 現在のURLをセット
+    copyTarget.select();
+    document.execCommand("Copy");
+    alert("URLをクリップボードにコピーしました。");
+}
+
+function shareX() {
+    const typeName = document.getElementById("res-type").innerText;
+    const catchPhrase = document.getElementById("res-catch").innerText;
+    const url = window.location.href;
+    const text = `【THE ABYSS - 深層心理の深淵】\n私の本性は…『${typeName}』\n${catchPhrase}\n\n#THE_ABYSS #深層心理診断\n`;
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
+}
+</script>
+        
         <button id="reset-btn" onclick="location.href=window.location.pathname" style="width: 100%; margin-top: 40px; font-size: 0.8rem;">全データを破棄して離脱する</button>
     </div>
 </div>
