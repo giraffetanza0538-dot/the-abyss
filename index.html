@@ -153,7 +153,8 @@
 <audio id="bgm" loop preload="auto"><source src="bgm.mp3" type="audio/mpeg"></audio>
 
 <div id="app">
-    <div id="start-screen" class="screen">
+  
+    <div id="start-screen" class="screen" style="display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 450px;">
         <h1>THE ABYSS</h1>
         <p style="text-align: center; color: #888; margin-bottom: 40px; line-height: 2; font-size: 0.9rem;">
             [ SYSTEM NOTIFICATION ]<br>
@@ -161,7 +162,8 @@
             社会的バイアスを排除し、直感のみで応答してください。<br>
             あなたの「本性」が暴かれるまで、残り50問。
         </p>
-        <button onclick="startQuiz()">システムを起動する</button>
+        <!-- 幅を制限して中央に配置 -->
+        <button onclick="startQuiz()" style="width: 100%; max-width: 300px;">システムを起動する</button>
     </div>
 
     <div id="quiz-screen" class="screen hidden">
