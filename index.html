@@ -331,10 +331,18 @@
 
     // ③被験者カウンターの演出用
     window.onload = function() {
-        const baseNum = 1000;
-        const randomIncr = Math.floor(Math.random() * 500); // 起動するたびに少し増やす演出
-        document.getElementById('subject-number').innerText = baseNum + randomIncr;
-    };
+    // 今日の日付を取得
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1; // 月は0-11で返るため+1
+    const day = now.getDate();
+
+    // ご指定の計算式: (西暦×20) + (月×10) + (日×10)
+    const baseCount = (year * 20) + (month * 10) + (day * 10);
+    
+    // 表示を更新
+    document.getElementById('subject-number').innerText = baseCount.toLocaleString();
+};
 
     function startQuiz() {
         const bgm = document.getElementById('bgm');
