@@ -50,19 +50,7 @@
         
         .q-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; }
         .q-number { font-size: 0.8rem; color: var(--accent-color); font-weight: bold; letter-spacing: 2px; }
-        
-        /* 質問文エリアの調整 */
-        .question-container { position: relative; margin-bottom: 30px; }
-        .question-text { font-size: 1.3rem; line-height: 1.8; min-height: 160px; color: #eee; }
-        
-        /* 再読み込みボタンのスタイル */
-        .reload-btn {
-            position: absolute; bottom: -10px; right: 0;
-            background: transparent; border: none; color: #444;
-            font-size: 0.7rem; cursor: pointer; letter-spacing: 1px;
-            padding: 5px; transition: 0.3s;
-        }
-        .reload-btn:hover { color: var(--accent-color); }
+        .question-text { font-size: 1.3rem; line-height: 1.8; min-height: 160px; margin-bottom: 30px; color: #eee; position: relative; }
 
         .btn-container { display: flex; gap: 20px; }
         button { 
@@ -72,15 +60,13 @@
         }
         button:hover { color: var(--accent-color); border-color: var(--accent-color); background: rgba(170,0,0,0.1); }
 
-        /* 被験者カウンターのスタイル */
-        .subject-counter {
-            font-family: monospace;
-            color: #444;
-            font-size: 0.7rem;
-            letter-spacing: 2px;
-            margin-bottom: 10px;
-            text-transform: uppercase;
+        /* 再読み込みボタンの小規模スタイル */
+        .reload-btn {
+            position: absolute; right: 0; top: -35px; background: none; border: none; 
+            color: #444; font-size: 0.7rem; cursor: pointer; letter-spacing: 1px;
+            padding: 5px; width: auto; flex: none;
         }
+        .reload-btn:hover { color: var(--accent-color); background: none; }
 
         .evidence-frame {
             position: relative;
@@ -150,15 +136,16 @@
         .section-title { color: #fff; font-size: 0.9rem; margin-top: 30px; background: linear-gradient(90deg, var(--accent-color), transparent); padding: 5px 15px; letter-spacing: 2px; font-weight: bold; }
         .section-content { font-size: 1rem; line-height: 1.8; color: #bbb; margin-bottom: 15px; padding: 10px 5px; text-align: justify; }
 
-        .rare-effect { animation: pulse-rare 2s infinite; border: 1px solid var(--rare-color) !important; }
-        @keyframes pulse-rare {
-            0% { box-shadow: 0 0 20px rgba(255, 0, 0, 0.2); }
-            50% { box-shadow: 0 0 50px rgba(255, 0, 0, 0.5); }
-            100% { box-shadow: 0 0 20px rgba(255, 0, 0, 0.2); }
-        }
-
         .hidden { display: none !important; }
         
+        .subject-counter {
+            font-family: monospace;
+            color: #555;
+            font-size: 0.75rem;
+            letter-spacing: 3px;
+            margin-bottom: 10px;
+        }
+
         @media (max-width: 600px) {
             h1 { font-size: 1.8rem !important; letter-spacing: 6px !important; }
             .question-text { font-size: 1.1rem !important; min-height: 120px !important; }
@@ -176,10 +163,10 @@
 
 <div id="app">
   
-    <!-- ①ホーム画面の修正: IDを固定しJSで完全に消えるように制御 -->
+    <!-- ①ホーム画面：起動後はhiddenで消えるように設定 -->
     <div id="start-screen" class="screen" style="display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 450px;">
-        <!-- ③被験者カウンター -->
-        <div class="subject-counter">Subject No. <span id="subject-number">1000</span></div>
+        <!-- ③被験者数カウンターの設置 -->
+        <div id="subject-display" class="subject-counter">SUBJECT NO. 000000</div>
         
         <h1>THE ABYSS</h1>
         <p style="text-align: center; color: #888; margin-bottom: 40px; line-height: 2; font-size: 0.9rem;">
@@ -196,10 +183,10 @@
             <div class="q-number" id="q-number"></div>
             <div id="status-display" style="font-size: 0.6rem; color: #666;">STATUS: SCANNING...</div>
         </div>
-        <!-- ②タイピング演出のバグ防止用コンテナ -->
-        <div class="question-container">
-            <div class="question-text" id="q-text"></div>
-            <button class="reload-btn" onclick="showQ()">[ RE-LOAD DATA ]</button>
+        <div class="question-text">
+            <!-- ②誤字発生時の再読み込みボタン -->
+            <button class="reload-btn" onclick="showQ()">[ RELOAD TEXT ]</button>
+            <div id="q-text"></div>
         </div>
         <div class="btn-container">
             <button onclick="handleAnswer(true)">YES (肯定)</button>
@@ -207,7 +194,6 @@
         </div>
     </div>
 
-    <!-- loading-screen, result-screen等は変更なしのため省略せず保持 (JSの連動のため) -->
     <div id="loading-screen" class="screen hidden">
         <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 200px;">
             <div id="load-msg" style="text-align: center; color: var(--accent-color); font-size: 1rem; letter-spacing: 3px; margin-bottom: 20px;"></div>
@@ -268,7 +254,24 @@
 </div>
 
 <script>
-    // --- 既存の質問・データ定義（中略なしで保持） ---
+    // 共有機能
+    function copyURL() {
+        const copyTarget = document.getElementById("share-url");
+        copyTarget.value = window.location.href;
+        copyTarget.select();
+        document.execCommand("Copy");
+        alert("URLをコピーしました。");
+    }
+
+    function shareX() {
+        const typeName = document.getElementById("res-type").innerText;
+        const catchPhrase = document.getElementById("res-catch").innerText;
+        const url = window.location.href;
+        const text = `【THE ABYSS - 深層心理の深淵】\n私の本性は…『${typeName}』\n${catchPhrase}\n\n#THE_ABYSS #深層心理診断\n`;
+        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
+    }
+
+    // 質問リスト
     const questions = [
         { t: "誰かを助ける時、その行為が将来的に自分へどれほどの利益をもたらすかを無意識に計算している。", fy: {M:2} },
         { t: "目的のためなら小さな改竄は「戦略的最適化」であり、躊躇する必要はない。", fy: {M:2} },
@@ -322,42 +325,62 @@
         { t: "今の質問に応えている自分さえも、偽りの姿であると感じる。", fy: {S:2} }
     ];
 
-    /* --- 診断ロジック（typeData）は省略せずそのまま使用してください --- */
-    /* ... 診断データのオブジェクトが入ります ... */
+    const typeData = {
+        "MS": { name: "情報詐欺師", ratio: "出現率 12.5%", catch: "「真実とは、最も巧妙に編まれた嘘の別称に過ぎない。」", core: "あなたは事実という無機質な粘土を使い、他者が喉から手が出るほど欲しがる『心地よい幻想』を造り上げる天才です。", persona: "非常に知的で洗練された相談役。その裏側には常に損得を弾き出す計算機が鎮座しています。", relation: "相手を「駒として依存させる」か「利用する」か。恩義を売ることで見えない負債を背負わせます。", career: "戦略コンサルタント、カリスマ的扇動家。", risk: "自分自身の本当の欲望さえも見失う深刻な自己喪失のリスクがあります。" },
+        "ED": { name: "評判の暗殺者", ratio: "出現率 8.5%", catch: "「正義という名の剣は、抜く前に相手を殺している。」", core: "他者の小さな綻びを見逃さない、冷酷な審判者。正論や倫理を武器に社会的な死を与えます。", persona: "高潔なリーダーを体現。実際は獲物の弱点を収集し抹殺の機会を伺うハンターです。", relation: "周囲を監視・ランク付け。不要な存在には一切の慈悲を見せず排除します。", career: "内部監査人、検察官、辛辣な批評家。", risk: "自ら定めたルールという監獄に閉じ込められ、孤立を招く恐れがあります。" },
+        "MC": { name: "思考の海賊", ratio: "出現率 4.5%", catch: "「あなたの記憶も、あなたの思想も、元は私の持ち物だ。」", core: "他者の独創的なアイデアを吸収し、自らの血肉とする精神的略奪者です。", persona: "天才肌を装い、借り物の言葉を魂の叫びのように劇的に演出します。", relation: "他者の才能を搾取する関係。吸い尽くした後は二度と視線を向けません。", career: "クリエイティブ・ディレクター、トレンドセッター。", risk: "内面は常に空虚であり、真の独創性を前にした際に自己崩壊する危険があります。" },
+        "SE": { name: "見えない窃盗犯", ratio: "出現率 3.5%", catch: "「失ったことさえ気づかないうちに、すべては私の手の中にある。」", core: "静寂の中に潜み、他者の機会や寵愛を奪い去る潜伏型の捕食者です。", persona: "害のない控えめな人間を完璧に演じます。誰からも警戒されずに弱点を吸収します。", relation: "全員の弱みを握っていますが、自分自身の心の内を見せることはありません。", career: "諜報員、情報仲介人、セキュリティ・アナリスト。", risk: "誰からも認識されない究極の孤独に陥る透明な幽霊のような恐怖があります。" },
+        "DS": { name: "深淵の独裁者", ratio: "出現率 6.0%", catch: "「自由とは、私に従うという選択肢のことだ。」", core: "見えない心理的な糸を使い、恐怖と依存をブレンドして大衆を操ります。", persona: "救世主のような圧倒的リーダーシップ。真の目的は他者の自己決定権を奪うことです。", relation: "「主従」を求めます。対等な関係はあなたにとって不確実なリスクでしかありません。", career: "独裁的経営者、カルト的政治家。", risk: "誰も信じられない疑心暗鬼の中で、自ら築いた帝国の重みに押し潰されるリスク。" },
+        "CD": { name: "扇動の放火魔", ratio: "出現率 4.0%", catch: "「燃え上がる街を眺める時、世界は初めて一つの意思になる。」", core: "物議を醸す火種を投げ込み、大炎上を特等席で眺める破壊の演出家です。", persona: "革命家として現れますが、内実にあるのは純粋なカオスへの好奇心です。", relation: "共通の敵を作り出し人々を結束させ、自分だけ安全な場所に残るよう仕向けます。", career: "過激派活動家、ネット炎上の仕掛け人。", risk: "自ら放った火がコントロールを失い、自分自身を焼き尽くすリスク。" },
+        "SM": { name: "仮面の偽造師", ratio: "出現率 14.0%", catch: "「本物の私？ それは今、あなたが鏡で見ている顔のことだ。」", core: "相手が見たい人格を反射して演じ分ける。素顔という概念を持たない深淵そのものです。", persona: "数秒で人格を再構成します。誰もが「あなたこそ理解者だ」と錯覚します。", relation: "期待値を模倣しているに過ぎません。愛し合う瞬間も別の役割の準備をしています。", career: "プロの詐欺師、名俳優、外交官。", risk: "自分が誰であるかを忘却し、終盤に空っぽの器しか残らない虚無のリスク。" },
+        "ME": { name: "冷徹な密輸商", ratio: "出現率 7.5%", catch: "「禁忌を運ぶのに、感情ほど邪魔な荷物はない。」", core: "禁じられた情報をただの数値として取引する闇の商人。倫理は計算のノイズです。", persona: "礼儀正しく几帳面。あらゆる事象を利回りと回収可能性で判定します。", relation: "すべての関係はドライな契約。親友であっても支払いが滞れば差し押さえの対象。", career: "死の商人、非合法情報屋、経営再建アドバイザー。", risk: "人間的な情緒が完全に枯渇し、データの一部として消滅するリスク。" },
+        "DE": { name: "共鳴のカルト教祖", ratio: "出現率 7.0%", catch: "「救いとは、私という深淵にすべてを投げ出すことだ。」", core: "不安に苛まれる魂の隙間に滑り込み、絶望を依存へと変換して支配します。", persona: "慈愛に満ちた包容力。弱者を肯定し、甘美な言葉で呪いをかけ自立心を破壊します。", relation: "教祖と狂信者の関係。許可なく思考することさえ許されない領域へ導きます。", career: "スピリチュアル指導者、マルチ商法トップ。", risk: "依存する存在がいなくなった瞬間に自らを定義できなくなる共依存の崩壊。" },
+        "CE": { name: "背徳のギャンブラー", ratio: "出現率 3.0%", catch: "「破滅の直前、人は最も美しく輝く。」", core: "平穏な人生をチップにして危険な賭けに興じる。求めているのは生の実感です。", persona: "退廃的な快楽主義者。奈落の縁を歩く危うさが周囲を惹きつけます。", relation: "相手を道連れにする破滅的な愛。安定を死と同義と捉え、壊すことで愛を実感します。", career: "ハイリスク投資家、戦場ジャーナリスト。", risk: "すべてを失い、路地裏で誰にも顧みられず野垂れ死ぬ末路への親和性。" },
+        "SD": { name: "多重スパイ", ratio: "出現率 11.5%", catch: "「誰の味方でもない。私が味方するのは、常に『勝利』だけだ。」", core: "二つ以上の勢力の間に立ち、双方をコントロールする均衡の支配者です。", persona: "忠実な部下を演じますが、提供する情報は誘導のための毒入りの餌です。", relation: "常に裏切りの準備をしています。利害がなくなれば盟友を躊躇なく売り渡します。", career: "諜報エージェント、フィクサー。", risk: "どこにも所属できない、恒久的な精神的無国籍状態に陥るリスク。" },
+        "CS": { name: "異端のリバタリアン", ratio: "出現率 0.7%", catch: "「自由を阻むものは、神であれ王であれ焼き払う。」", core: "あらゆる秩序を個人の自由を束縛する枷として憎悪する究極の個人主義者。", persona: "知的な個人主義者ですが、内側では既存の価値観をゴミのように扱っています。", relation: "対人関係を脆弱さの始まりとして拒絶。目的を果たせば鮮やかに絆を切断します。", career: "孤高のハッカー、孤独なテロリスト。", risk: "完全に自由になった果てに、絶対的な虚無に到達し生きる目的が消滅するリスク。" },
+        "ES": { name: "沈黙の処刑人", ratio: "出現率 0.9%", catch: "「言葉による弁明は不要だ。結果がすべてを裁く。」", core: "感情をシャットダウンし、事務的に他人の人生を終わらせる冷徹な執行者。", persona: "感情の起伏がない鋼の仮面。一切の弁明を許さない終止符のような存在。", relation: "機能的な繋がり。家族さえも資産管理の対象であり、愛をコードで書き換えました。", career: "リストラ担当役員、非情な資産整理人。", risk: "心が完全に石化し、自分がプログラムなのか判別できなくなる生ける屍の末路。" },
+        "DM": { name: "強欲な徴収官", ratio: "出現率 3.5%", catch: "「あなたの価値は、私がどれだけ搾り取れるかで決まる。」", core: "他者の労力や時間さえも、自分が回収すべき未回収資産と認識しています。", persona: "面倒見の良い実業家を演じますが、最後の一滴まで徴収しようとする吸血鬼です。", relation: "周囲を債務者として扱い、一生消えない精神的な負債を負わせて奉仕させます。", career: "冷酷な高利貸し、搾取型プラットフォーム創設者。", risk: "奪い尽くし、奪う相手さえいなくなった荒野で一人飢えて死ぬリスク。" },
+        "EC": { name: "虚無の破壊者", ratio: "出現率 0.5%", catch: "「美しいものは、粉々に砕ける時に最も完成される。」", core: "秩序あるものすべてを無意味という深淵へ叩き落とすことに価値を見出す破壊者。", persona: "超越的な雰囲気。脳内では目の前の文明を崩壊させる起爆点を計算しています。", relation: "他者の大切なものを踏みにじり、絶望する反応を無機質な好奇心で観察します。", career: "市場を壊滅させる相場師、終末論的テロリスト。", risk: "対象が尽きた時、唯一のターゲットである自分を破壊する自己破滅的ニヒリズム。" }
+    };
 
     let currentIdx = 0;
     let scores = { M: 0, E: 0, D: 0, C: 0, S: 0 };
-    let typeTimer = null; // ②タイピング制御用の変数
+    let typingTimer = null; // ②タイマー管理用
 
-    // ③被験者カウンターの演出用
-    window.onload = function() {
-    // 今日の日付を取得
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth() + 1; // 月は0-11で返るため+1
-    const day = now.getDate();
+    // ③被験者数カウンターのロジック
+    function updateSubjectCounter() {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = now.getMonth() + 1;
+        const d = now.getDate();
+        // ベース計算
+        let count = (y * 20) + (m * 10) + (d * 10);
+        
+        // 1000からスタートし、秒数で少しずつ増やす演出
+        const startTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0).getTime();
+        const elapsedSeconds = Math.floor((now.getTime() - startTime) / 10); // 100ミリ秒ごとにカウントアップ
+        
+        const finalCount = 1000 + count + elapsedSeconds;
+        document.getElementById('subject-display').innerText = `SUBJECT NO. ${String(finalCount).padStart(8, '0')}`;
+    }
 
-    // ご指定の計算式: (西暦×20) + (月×10) + (日×10)
-    const baseCount = (year * 20) + (month * 10) + (day * 10);
-    
-    // 表示を更新
-    document.getElementById('subject-number').innerText = baseCount.toLocaleString();
-};
+    // カウンターをリアルタイム更新
+    setInterval(updateSubjectCounter, 100);
 
     function startQuiz() {
         const bgm = document.getElementById('bgm');
         bgm.volume = 0.4;
         bgm.play().catch(()=>{});
         
-        // ①ホーム画面を完全に消す
+        // ①スタート画面を消し、クイズ画面を表示
         document.getElementById('start-screen').classList.add('hidden');
         document.getElementById('quiz-screen').classList.remove('hidden');
         showQ();
     }
 
     function showQ() {
-        // ②文字化けバグ防止：既存のタイマーがあれば止める
-        if (typeTimer) clearInterval(typeTimer);
+        // ②既存のタイマーをクリアして多重実行を防止
+        if (typingTimer) clearInterval(typingTimer);
 
         const q = questions[currentIdx];
         const el = document.getElementById('q-text');
@@ -370,21 +393,21 @@
 
         el.innerText = "";
         let i = 0;
-        typeTimer = setInterval(() => {
+        typingTimer = setInterval(() => {
             el.innerText += q.t.charAt(i);
             i++;
             if (i >= q.t.length) {
-                clearInterval(typeTimer);
-                typeTimer = null;
+                clearInterval(typingTimer);
+                typingTimer = null;
             }
         }, 25);
     }
 
     function handleAnswer(isYes) {
-        // ②回答ボタンを押した瞬間にタイマーを停止（次の質問準備）
-        if (typeTimer) {
-            clearInterval(typeTimer);
-            typeTimer = null;
+        // ②回答時にタイマーを止めて文字化け防止
+        if (typingTimer) {
+            clearInterval(typingTimer);
+            typingTimer = null;
         }
 
         const q = questions[currentIdx];
@@ -398,13 +421,14 @@
         else processResult();
     }
 
-    /* --- 以下、処理系関数（既存のまま） --- */
     function processResult() {
         document.getElementById('quiz-screen').classList.add('hidden');
         document.getElementById('loading-screen').classList.remove('hidden');
+        
         const msg = document.getElementById('load-msg');
         const bar = document.getElementById('progress-inner');
         const logs = ["倫理回路バイパス中...", "潜在理性スキャン中...", "防衛本能剥離完了...", "深層データ復元率 92%...", "深淵との同期完了。"];
+        
         let i = 0;
         const interval = setInterval(() => {
             msg.innerText = logs[i];
@@ -417,8 +441,43 @@
         }, 800);
     }
 
-    // displayFinal, copyURL, shareX などの既存関数はそのままここに記述してください
-    // (省略されている typeData 等も含め、お手元のコードの残りをそのまま結合してください)
+    function displayFinal() {
+        const flash = document.getElementById('flash');
+        flash.style.animation = 'shutter 0.5s ease-out';
+        
+        document.getElementById('loading-screen').classList.add('hidden');
+        document.getElementById('result-screen').classList.remove('hidden');
+        
+        const sorted = Object.entries(scores).sort((a,b) => b[1] - a[1]);
+        let char1 = sorted[0] ? sorted[0][0] : "M";
+        let char2 = sorted[1] ? sorted[1][0] : "S";
+        let key = char1 + char2;
+        if (!typeData[key]) key = char2 + char1;
+        if (!typeData[key]) key = "MS";
+        
+        const data = typeData[key];
+        document.getElementById('res-type').innerText = data.name;
+        document.getElementById('res-ratio').innerText = data.ratio;
+        document.getElementById('res-catch').innerText = data.catch;
+        document.getElementById('res-core').innerText = data.core;
+        document.getElementById('res-persona').innerText = data.persona;
+        document.getElementById('res-relation').innerText = data.relation;
+        document.getElementById('res-career').innerText = data.career;
+        document.getElementById('res-risk').innerText = data.risk;
+        
+        // 画像とメタ情報（簡易）
+        document.getElementById('res-img').src = `images/${key}.jpg`;
+        document.getElementById('evidence-meta').innerHTML = `FILE_TYPE: PSYCHOSOMATIC_SCAN<br>SUBJECT_ID: ${Math.random().toString(16).slice(2,10).toUpperCase()}<br>DEEP_SYNC: SUCCESSFUL`;
+        document.getElementById('share-url').value = window.location.href;
+    }
+
+    function handleImageError(img) {
+        const frameEl = document.getElementById('img-container');
+        const errorMsg = document.getElementById('res-error-msg');
+        img.style.display = 'none';
+        frameEl.classList.add('error-state');
+        errorMsg.style.display = 'block';
+    }
 </script>
 
 </body>
