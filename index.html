@@ -60,12 +60,34 @@
         }
         button:hover { color: var(--accent-color); border-color: var(--accent-color); background: rgba(170,0,0,0.1); }
 
-        .reload-btn {
-            position: absolute; right: 0; top: -35px; background: none; border: none; 
-            color: #444; font-size: 0.7rem; cursor: pointer; letter-spacing: 1px;
-            padding: 5px; width: auto; flex: none;
-        }
-        .reload-btn:hover { color: var(--accent-color); background: none; }
+        /* 既存の .reload-btn は削除し、以下を貼り付け */
+.reload-container {
+    display: flex;
+    justify-content: flex-end; /* 右寄せ */
+    margin-bottom: 15px;
+}
+
+.reload-btn {
+    background: rgba(40, 40, 40, 0.4); 
+    color: #bbb; 
+    border: 1px solid #555; 
+    padding: 8px 16px; 
+    cursor: pointer; 
+    font-family: inherit; 
+    font-size: 0.75rem; 
+    letter-spacing: 1px;
+    transition: all 0.2s;
+    border-radius: 2px;
+    width: auto !important;
+    flex: none !important;
+    position: static !important; /* 前回の絶対配置を解除 */
+}
+
+.reload-btn:hover { 
+    color: var(--accent-color); 
+    border-color: var(--accent-color);
+    background: rgba(170, 0, 0, 0.15);
+}
 
         .evidence-frame {
             position: relative;
@@ -175,20 +197,28 @@
         <button onclick="startQuiz()" style="width: 100%; max-width: 300px;">システムを起動する</button>
     </div>
 
-    <div id="quiz-screen" class="screen hidden">
-        <div class="q-header">
-            <div class="q-number" id="q-number"></div>
-            <div id="status-display" style="font-size: 0.6rem; color: #666;">STATUS: SCANNING...</div>
-        </div>
-        <div class="question-text">
-            <button class="reload-btn" onclick="showQ()">[ RELOAD TEXT ]</button>
-            <div id="q-text"></div>
-        </div>
-        <div class="btn-container">
-            <button onclick="handleAnswer(true)">YES (肯定)</button>
-            <button onclick="handleAnswer(false)">NO (否定)</button>
-        </div>
+<div id="quiz-screen" class="screen hidden">
+    <div class="q-header">
+        <div class="q-number" id="q-number"></div>
+        <div id="status-display" style="font-size: 0.6rem; color: #666;">STATUS: SCANNING...</div>
     </div>
+    
+    <!-- 1. 質問文エリア -->
+    <div class="question-text">
+        <div id="q-text"></div>
+    </div>
+
+    <!-- 2. ここにリロードボタンを移動（質問文のすぐ下） -->
+    <div class="reload-container">
+        <button class="reload-btn" onclick="showQ()">[ ↻ RELOAD TEXT ]</button>
+    </div>
+
+    <!-- 3. 回答ボタンエリア -->
+    <div class="btn-container">
+        <button onclick="handleAnswer(true)">YES (肯定)</button>
+        <button onclick="handleAnswer(false)">NO (否定)</button>
+    </div>
+</div>
 
     <div id="loading-screen" class="screen hidden">
         <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 200px;">
