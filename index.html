@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>THE ABYSS - 深層心理極秘診断レポート</title>
+    <style>
+        :root {
+            --bg-color: #050505;
+            --accent-color: #aa0000;
+            --text-color: #d0d0d0;
+            --card-bg: rgba(10, 10, 10, 0.98);
+            --border-color: #333;
+            --glitch-speed: 0.2s;
+        }
+        
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Courier New', 'Helvetica Neue', 'Arial', 'Hiragino Sans', 'Meiryo', sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* 走査線・ノイズオーバーレイ */
+        body::before {
+            content: " ";
+            position: fixed;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%);
+            z-index: 5000;
+            background-size: 100% 4px;
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
+        #app { width: 95%; max-width: 800px; z-index: 10; padding: 40px 0; }
+        
+        .screen { 
+            background: var(--card-bg); 
+            border: 1px solid var(--border-color); 
+            padding: 40px; 
+            box-shadow: 0 0 60px rgba(0, 0, 0, 0.9); 
+            position: relative;
+            box-sizing: border-box;
+            transition: opacity 0.5s ease;
+        }
+
+        /* グリッチアニメーション */
+        @keyframes glitch {
+            0% { transform: translate(0); text-shadow: -2px 0 red, 2px 0 blue; }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
+        }
+
+        h1 { 
+            color: var(--accent-color); 
+            text-align: center; 
+            letter-spacing: 15px; 
+            font-size: 2.5rem; 
+            margin-bottom: 10px; 
+            text-shadow: 0 0 15px rgba(170, 0, 0, 0.6);
+            animation: glitch 5s infinite;
+        }
+        
+        /* プログレスバー */
+        .progress-container {
+            width: 100%;
+            height: 2px;
+            background: #111;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        .progress-bar {
+            height: 100%;
+            background: var(--accent-color);
+            width: 0%;
+            transition: width 0.3s ease;
+            box-shadow: 0 0 10px var(--accent-color);
+        }
+
+        /* 質問画面の要素 */
+        .q-header { display: flex; justify-content: space-between; margin-bottom: 30px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        .q-number { font-size: 0.8rem; color: var(--accent-color); letter-spacing: 2px; }
+        .question-text { font-size: 1.2rem; line-height: 2; min-height: 140px; margin-bottom: 40px; color: #eee; }
+
+        .btn-container { display: flex; gap: 20px; }
+        button { 
+            flex: 1; background: transparent; color: #aaa; border: 1px solid #444; 
+            padding: 20px; cursor: pointer; font-family: inherit; font-size: 1rem; 
+            transition: 0.2s; letter-spacing: 3px;
+            position: relative;
+            overflow: hidden;
+        }
+        button:hover { color: #fff; border-color: var(--accent-color); background: rgba(170,0,0,0.15); box-shadow: 0 0 15px rgba(170,0,0,0.2); }
+        button:active { transform: scale(0.98); }
+
+        /* 外側に配置するリロードボタン */
+        .reload-outer-container {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            margin-top: 30px;
+        }
+        .reload-btn {
+            background: transparent;
+            color: #555;
+            border: 1px solid #222;
+            padding: 10px 20px;
+            font-size: 0.7rem;
+            letter-spacing: 3px;
+            cursor: pointer;
+            width: auto;
+            flex: none;
+        }
+        .reload-btn:hover { color: var(--accent-color); border-color: var(--accent-color); }
+
+        /* 結果画面のデザイン */
+        .destroy-note {
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--accent-color);
+            letter-spacing: 4px;
+            margin-bottom: 30px;
+            border-top: 1px solid var(--accent-color);
+            border-bottom: 1px solid var(--accent-color);
+            padding: 12px 0;
+            font-weight: bold;
+            background: rgba(170, 0, 0, 0.05);
+        }
+
+        .evidence-frame {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            background: #000;
+            margin-bottom: 30px;
+            border: 1px solid #444;
+            overflow: hidden;
+        }
+        .scan-line {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 3px;
+            background: rgba(255, 0, 0, 0.7);
+            box-shadow: 0 0 15px red;
+            animation: scanning 4s linear infinite;
+            z-index: 5;
+        }
+        @keyframes scanning { 0% { top: 0%; } 100% { top: 100%; } }
+
+        .result-img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(1) contrast(1.3) brightness(0.8); opacity: 0.6; transition: 1s; }
+        .type-title { font-size: 2.8rem; color: var(--accent-color); text-align: center; margin: 0; font-weight: bold; letter-spacing: 10px; text-shadow: 0 0 20px rgba(170,0,0,0.4); }
+        .type-subtitle { text-align: center; color: #888; font-size: 1rem; margin-bottom: 40px; letter-spacing: 2px; font-style: italic; }
+
+        .section-title { 
+            border-left: 4px solid var(--accent-color); 
+            padding-left: 15px; margin-top: 35px; margin-bottom: 15px;
+            font-weight: bold; font-size: 1rem; color: #fff; letter-spacing: 2px;
+        }
+        .section-content { font-size: 0.95rem; line-height: 1.8; color: #bbb; text-align: justify; margin-bottom: 20px; }
+
+        /* シェアボタン */
+        .share-container {
+            display: flex;
+            gap: 15px;
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 1px solid #333;
+        }
+        .share-btn { font-size: 0.8rem; padding: 12px; }
+        .btn-x { border-color: #555; color: #fff; }
+        .btn-copy { border-color: #555; color: #fff; }
+
+        /* 警告ボックス */
+        .warning-box {
+            border: 1px dashed var(--accent-color);
+            padding: 20px;
+            margin: 30px 0;
+            background: rgba(170, 0, 0, 0.05);
+        }
+        .warning-text { color: #eee; font-size: 0.85rem; font-style: italic; line-height: 1.6; }
+
+        .hidden { display: none !important; }
+        
+        #loading-msg { text-align: center; color: var(--accent-color); letter-spacing: 5px; margin-top: 25px; font-weight: bold; }
+
+        @media (max-width: 600px) {
+            .screen { padding: 25px; }
+            .type-title { font-size: 1.8rem; letter-spacing: 5px; }
+            .btn-container { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+<audio id="bgm" loop>
+    <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3" type="audio/mpeg">
+</audio>
+
+<div id="app">
+    <!-- スタート画面 -->
+    <div id="start-screen" class="screen">
+        <div style="text-align: center; font-size: 0.7rem; color: #555; margin-bottom: 20px; letter-spacing: 4px;">PROJECT ID: ABYSS-2026</div>
+        <h1>THE ABYSS</h1>
+        <p style="text-align: center; color: #888; margin-bottom: 40px; line-height: 2; font-size: 0.9rem;">
+            この診断は、あなたの社会的仮面の裏に潜む<br>
+            「真の属性」を暴き出すためのプロトコルです。<br>
+            50の問いに対し、偽りなく応答してください。
+        </p>
+        <button onclick="startQuiz()" style="width: 100%; border-color: var(--accent-color); color: #fff;">システムを起動する</button>
+    </div>
+
+    <!-- 質問画面 -->
+    <div id="quiz-screen" class="screen hidden">
+        <div class="progress-container"><div id="progress-bar" class="progress-bar"></div></div>
+        <div class="q-header">
+            <div class="q-number" id="q-number">PROTOCOL NO. 01</div>
+            <div style="font-size: 0.6rem; color: #555;">ENCRYPTED SESSION</div>
+        </div>
+        <div class="question-text" id="q-text"></div>
+        <div class="btn-container">
+            <button onclick="handleAnswer(true)">YES</button>
+            <button onclick="handleAnswer(false)">NO</button>
+        </div>
+    </div>
+
+    <!-- 質問中のみ表示される外側のリロードボタン -->
+    <div id="reload-container" class="reload-outer-container hidden">
+        <button class="reload-btn" onclick="typeWriter()">[ RELOAD TEXT ]</button>
+    </div>
+
+    <!-- ローディング画面 -->
+    <div id="loading-screen" class="screen hidden">
+        <div style="height: 200px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+            <div style="width: 50px; height: 50px; border: 2px solid #222; border-top-color: var(--accent-color); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+            <div id="loading-msg">ANALYZING PSYCHE...</div>
+        </div>
+    </div>
+
+    <!-- 結果画面 -->
+    <div id="result-screen" class="screen hidden">
+        <div class="destroy-note">CONFIDENTIAL: 閲覧後は本ページを破棄してください</div>
+        
+        <div class="evidence-frame">
+            <div class="scan-line"></div>
+            <img id="res-img" class="result-img" src="" alt="Evidence">
+        </div>
+
+        <div id="res-type" class="type-title"></div>
+        <div id="res-catch" class="type-subtitle"></div>
+
+        <div class="section-title">■ 深層心理の核心 (CORE)</div>
+        <div id="res-core" class="section-content"></div>
+
+        <div class="section-title">■ 社会的仮面 (PERSONA)</div>
+        <div id="res-persona" class="section-content"></div>
+
+        <div class="section-title">■ 対人関係の流儀 (RELATION)</div>
+        <div id="res-relation" class="section-content"></div>
+
+        <div class="section-title">■ 破滅へのトリガー (RISK)</div>
+        <div id="res-risk" class="section-content"></div>
+
+        <div class="warning-box">
+            <div id="abyss-warning" class="warning-text"></div>
+        </div>
+
+        <div class="share-container">
+            <button class="share-btn btn-x" onclick="shareX()">Xで報告</button>
+            <button class="share-btn btn-copy" onclick="copyLink()">URLをコピー</button>
+        </div>
+
+        <button onclick="location.reload()" style="width: 100%; margin-top: 30px; font-size: 0.8rem; border-color: #222;">記録を抹消して終了</button>
+    </div>
+</div>
+
+<script>
+    // 診断データ
+    const typeData = {
+        "MS": { name: "情報詐欺師", ratio: "12.5%", catch: "「真実とは、最も巧妙に編まれた嘘の別称に過ぎない。」", core: "事実という無機質な粘土を使い、他者が欲しがる『心地よい幻想』を造り上げる天才です。", persona: "非常に知的で洗練された相談役を演じますが、その裏では常に損得の計算機が動いています。", relation: "相手を「依存させる駒」か「利用対象」として見ており、深い愛着は脆弱性とみなします。", risk: "嘘を重ねすぎた結果、自分自身の本当の欲望さえ借り物のように感じる自己喪失のリスクがあります。", img: "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=800" },
+        "ED": { name: "評判の暗殺者", ratio: "8.5%", catch: "「正義という名の剣は、抜く前に相手を殺している。」", core: "他者の綻びを見逃さない冷酷な審判者。正論という武器で社会的な死を与えることに長けています。", persona: "公平無私なリーダーを装いつつ、獲物の弱点スキャンダルを収集するハンターの顔を持ちます。", relation: "周囲を常に監視しランク付けしています。一度敵と見なせば慈悲なく外堀から埋めて排除します。", risk: "自ら定めた完璧なルールという名の監獄に囚われ、最終的に誰からも受け入れられず孤立します。", img: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=800" },
+        "MC": { name: "思考の海賊", ratio: "4.5%", catch: "「あなたの記憶も、あなたの思想も、元は私の持ち物だ。」", core: "他者の独創的なアイデアを吸収し、自らの血肉とする精神的略奪者。再構築の天才です。", persona: "エキセントリックな天才を装い、借り物の言葉を魂の叫びのように劇的に演出します。", relation: "才能を搾取する関係を築き、利用価値がなくなれば即座に視線を向けるのをやめます。", risk: "内面は常に空虚であり、真の独創性を突きつけられた際に自己が崩壊する恐怖を抱えています。", img: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=800" },
+        "SE": { name: "見えない窃盗犯", ratio: "3.5%", catch: "「失ったことさえ気づかないうちに、すべては私の手の中にある。」", core: "静寂に潜み、他人の機会や寵愛を気づかれぬうちに奪い去る潜伏型の捕食者です。", persona: "目立たず害のない人間を完璧に演じ、警戒されずに重要機密や弱点を吸収し続けます。", relation: "全員の弱みを握りつつ深く関わらず、自分自身の心を見せることは万に一つもありません。", risk: "誰からも認識されない究極の孤独に陥り、自分が存在するか確信が持てなくなる恐怖があります。", img: "https://images.unsplash.com/photo-1525930372433-2898c603a11b?q=80&w=800" },
+        "DS": { name: "深淵の独裁者", ratio: "6.0%", catch: "「自由とは、私に従うという選択肢のことだ。」", core: "心理的な糸で大衆を操る影の統治者。恐怖と依存を混ぜた支配体制を好みます。", persona: "圧倒的な威風を放つ救世主として振る舞い、他者の自己決定権を奪い手足にします。", relation: "完全なる主従関係を求めます。対等な関係は反逆の予兆であり、不確実なリスクです。", risk: "誰も心から信じられない疑心暗鬼の中で、自ら築いた帝国の重みに押し潰されるリスクがあります。", img: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?q=80&w=800" },
+        "CD": { name: "扇動の放火魔", ratio: "4.0%", catch: "「燃え上がる街を眺める時、世界は初めて一つの意思になる。」", core: "平穏に耐えられず、物議を醸す火種を投げ込んでカオスを眺める破壊の演出家です。", persona: "情熱的な革命家を装いますが、その実態は破壊衝動そのもの。対立を煽ることに快感を覚えます。", relation: "人間関係を使い捨ての燃料と考え、最後は自分だけが生き残るよう冷徹に仕向けます。", risk: "自ら放った火がコントロールを失い、逃げ場のない場所で自分自身を焼き尽くすリスクがあります。", img: "https://images.unsplash.com/photo-1533604135967-05a5df7bcc55?q=80&w=800" },
+        "SM": { name: "仮面の偽造師", ratio: "14.0%", catch: "「本物の私？ それは今、あなたが鏡で見ている顔のことだ。」", core: "相手が見たい人格を反射して演じ分ける魔術師。素顔という概念を持ち合わせていません。", persona: "ターゲットの好みに合わせて人格を数秒で再構成します。その演技に綻びはありません。", relation: "相手に唯一の理解者だと錯覚させますが、実際は期待値を模倣しているに過ぎません。", risk: "自分が誰であるかを完全に忘却し、人生の終盤に空っぽの器しか残らない虚無が待っています。", img: "https://images.unsplash.com/photo-1502444330042-d1a1ddf9bb5b?q=80&w=800" },
+        "ME": { name: "冷徹な密輸商", ratio: "7.5%", catch: "「禁忌を運ぶのに、感情ほど邪魔な荷物はない。」", core: "法律や道徳に禁じられたものを数値化された商品として扱う。利回りがすべてです。", persona: "几帳面なビジネスマンですが、瞳には生命や愛に対する敬意が決定的に欠如しています。", relation: "すべての関係は契約に基づきドライ。親友であっても支払いが滞れば即座に差し押さえます。", risk: "合理性を極めた結果、人間としての情緒が枯渇し、データの一部として消滅するリスクがあります。", img: "https://images.unsplash.com/photo-1451187530220-4c2a42d99d1e?q=80&w=800" },
+        "DE": { name: "共鳴のカルト教祖", ratio: "7.0%", catch: "「救いとは、私という深淵にすべてを投げ出すことだ。」", core: "不安に苛まれる隙間に滑り込み、絶望を依存へと変換して支配する精神的簒奪者です。", persona: "慈愛に満ちた包容力を見せ、甘美な言葉で相手の自立心を確実に破壊していきます。", relation: "教祖と狂信者の関係のみを構築。自己肯定感を粉砕した後に、自分だけが与えられる承認で飼います。", risk: "依存する存在がいなくなった瞬間、自分の形を定義できなくなる共依存の崩壊を恐れています。", img: "https://images.unsplash.com/photo-1519608487953-e999c86e7455?q=80&w=800" },
+        "CE": { name: "背徳のギャンブラー", ratio: "3.0%", catch: "「破滅の直前、人は最も美しく輝く。」", core: "自命や周囲の平穏をチップにして死と隣り合わせの賭けに興じるスリル中毒者です。", persona: "刹那的な快楽主義者の雰囲気を纏い、奈落の縁を歩く危うさで周囲を惹きつけます。", relation: "相手を道連れにして共倒れになるような破滅的な関係を繰り返すことで愛を実感します。", risk: "最後は何もかも失い、誰からも顧みられない路地裏での野垂れ死にへの親和性が高いです。", img: "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=800" },
+        "SD": { name: "多重スパイ", ratio: "11.5%", catch: "「誰の味方ではない。私が味方するのは、常に『勝利』だけだ。」", core: "二つの勢力の間で双方をコントロールし、自分に最も有利な着地点を探り当てる均衡の支配者。", persona: "有能で忠実な部下として振る舞いつつ、相手を誘導するための毒の餌を撒き続けます。", relation: "常に裏切りの準備をしています。利害が一致しなくなれば、昨日までの盟友も即座に売ります。", risk: "どこにも所属できない恒久的な帰属意識の欠如、一生誰とも心を通わせられないリスクがあります。", img: "https://images.unsplash.com/photo-1454165833767-027eeef15265?q=80&w=800" },
+        "CS": { name: "異端のリバタリアン", ratio: "0.7%", catch: "「自由を阻むものは、神であれ王であれ焼き払う。」", core: "既存の秩序や社会システムを束縛として憎悪する、究極の個人主義者です。", persona: "知的な個人主義者ですが、内側では他者を見下し、社会慣習をゴミのように扱っています。", relation: "対人関係を脆弱さの始まりとして拒絶。必要な時だけ接続し、終われば鮮やかに切断します。", risk: "完全に自由になった果てに、何の意味も持たない絶対的な虚無に到達し、生きる目的を失います。", img: "https://images.unsplash.com/photo-1514539079130-25950c84af65?q=80&w=800" },
+        "ES": { name: "沈黙の処刑人", ratio: "0.9%", catch: "「言葉による弁明は不要だ。結果がすべてを裁く。」", core: "感情を遮断し、事務的なプロセスとして他人の人生を終わらせることができる執行者です。", persona: "感情の起伏が全く見えない鋼の仮面. 一切の弁明を許さない死神に近いプレッシャーを放ちます。", relation: "機能的な繋がりしか持たず、家族さえも資産管理の対象。効率と結果が脳のすべてです。", risk: "心が完全に石化し、自分がプログラムなのか人間なのか判別できなくなる末路を辿ります。", img: "https://images.unsplash.com/photo-1506704918330-cd920516640c?q=80&w=800" },
+        "DM": { name: "強欲な徴収官", ratio: "3.5%", catch: "「あなたの価値は、私がどれだけ搾り取れるかで決まる。」", core: "他者の労力や才能を、自分が回収すべき未回収資産と認識している精神的吸血鬼です。", persona: "面倒見の良い実業家を演じつつ、相手の最後の一滴の血まで利子をつけて奪おうとします。", relation: "周囲を債務者として扱い、小さな恩恵で一生消えない負債を負わせ、死ぬまで奉仕させます。", risk: "どれほど手に入れても満たされない底なしの飢餓感。最後は奪う相手もいない荒野で飢えます。", img: "https://images.unsplash.com/photo-1542362567-b055002b91f4?q=80&w=800" },
+        "EC": { name: "虚無の破壊者", ratio: "0.5%", catch: "「美しいものは、粉々に砕ける時に最も完成される。」", core: "形あるもの、秩序あるものすべてを無意味という深淵へ叩き落とすことにのみ価値を見出します。", persona: "超越的な無関心を装い、脳内では対象を最も美しく崩壊させる起爆点を計算しています。", relation: "他者が大切にしているものを目の前で踏みにじり、絶望する反応を無機質に観察します。", risk: "破壊の対象が尽きた時、唯一残った自分自身を破壊する以外に道がなくなる自己破滅が待っています。", img: "https://images.unsplash.com/photo-1520034475321-cbe63696469a?q=80&w=800" }
+    };
+
+    const abyssWarnings = [
+        "現在、あなたの背後に3人の『協力者』を感知しました。…うち1人は、あなたを売る準備をしています。",
+        "鏡を見る回数を減らしてください。そこに映っているのは、もはやあなたではありません。",
+        "あなたが昨日ついた小さな嘘が、今、誰かの人生を物理的に終わらせようとしています。",
+        "警告：あなたの脳波が、30年前に失踪した『被験者7号』と完全に一致しました。",
+        "今日、親しい誰かから贈られる言葉には注意してください。それは『別れの挨拶』の変奏曲です。",
+        "あなたの影が、あなたより数秒早く動いています。主導権が入れ替わるまで、あと僅かです。",
+        "今夜、夢の中でドアを叩く音がしても、決して開けてはいけません。それは『借り』を返しに来た者です。",
+        "あなたのスマートフォンには、あなたが送った覚えのないメッセージが1件保存されています。見ない方が賢明です。",
+        "周囲の人間があなたに優しいのは、あなたが『壊れやすい観賞植物』だと思われているからです。",
+        "誰にも言っていないはずのあの秘密を、隣の部屋の住人は知っています。",
+        "システムの分析によれば、あなたの次の『重大な過ち』は、今から72時間以内に発生します。",
+        "あなたの『善意』が、巡り巡ってあなたの最も大切なものを焼き尽くす燃料になっています。",
+        "現在、未知の端末があなたの視覚野を共有しています。…彼らはあなたの選択を嘲笑っています。",
+        "最後に心から笑ったのはいつですか？ その時死んだ感情が、今あなたの足首を掴んでいます。",
+        "警告：このページを閉じても、スキャニングはあなたの生活の裏側で継続されます。",
+        "あなたが選んだ『YES』のうち3つは、あなたの潜在意識が拒絶していたものです。",
+        "あなたの家のクローゼットの奥に、見覚えのない鍵が落ちています。それは開けてはならない扉のものです。",
+        "あなたが『愛している』と思っている感情の正体は、脳が分泌した生存のための防衛物質です。",
+        "次の満月の夜、あなたは自分が『人間ではない何か』であることに気づくでしょう。",
+        "データによれば、あなたの味方は一人もいません。しかし、敵だけは誠実にお側を歩いています。"
+    ];
+
+    const questions = [
+        { t: "誰かを助ける時、その行為が将来的に自分へどれほどの利益をもたらすかを無意識に計算している。", fy: {M:2} },
+        { t: "目的のためなら小さな改竄は「戦略的最適化」であり、躊躇する必要はない。", fy: {M:2} },
+        { t: "他人の秘密を握ることは、効率的な弾薬を手に入れることと同じだ。", fy: {M:2} },
+        { t: "会話の中で相手の思考を自らの意図通りに誘導することに悦びを感じる。", fy: {M:2} },
+        { t: "感情に流されて非合理な判断を下す人間を見ると、心の底から軽蔑したくなる。", fy: {M:2} },
+        { t: "常に「損得」よりも「感情」を優先して行動する人間でありたいと思う。", fn: {M:1.5} }, 
+        { t: "「誠実」よりも「利害関係」の方が遥かに信頼できる繋がりである。", fy: {M:2} },
+        { t: "自分のミスを他人のせいにした時、良心の呵責より爽快感の方が大きい。", fy: {M:2} },
+        { t: "人の弱みを握ると「いつこれを切り札にしようか」という期待が込み上げる。", fy: {M:2} },
+        { t: "バレなければ何をしてもいいという考えは合理的な判断だと思う。", fy: {M:2} },
+        { t: "友人の不幸を聞いた時、表面上は同情するが、内心では強烈な安堵感を覚える。", fy: {E:2} },
+        { t: "他人の涙を見ても、共感より先に「この涙は演技か」と疑ってしまう。", fy: {E:2} },
+        { t: "どれほど親しい相手でも、利益と相反する瞬間に躊躇なく切り捨てる自信がある。", fy: {E:2} },
+        { t: "能力の低い者が苦境に立たされても、それは自己責任であり救済は不要だ。", fy: {E:2} },
+        { t: "集団の中で孤立している人間を見ても、冷めた視線で傍観できる。", fy: {E:2} },
+        { t: "自分自身の幸福よりも、他人の幸福を優先して行動することが多い。", fn: {E:2} }, 
+        { t: "「愛」や「絆」という言葉を聞くと、弱者を繋ぎ止める罠のように感じる。", fy: {E:2} },
+        { t: "他人の人生が狂うような噂話を広めることに、密かな快感を覚える。", fy: {E:2} },
+        { t: "相手を精神的にじわじわと追い詰めることに喜びを感じる。", fy: {E:2} },
+        { t: "この世界がどうなろうと知ったことではない。むしろ道連れに滅びてほしい。", fy: {E:2} },
+        { t: "他人が自分を褒め称えるのは当然の義務であり、周囲は自分を輝かせる装置だ。", fy: {D:2} },
+        { t: "自分が注目を浴びていない集まりは時間の無駄だと感じる。", fy: {D:2} },
+        { t: "自分のアドバイスで他人の人生が変わるのを見て、全能感を覚える。", fy: {D:2} },
+        { t: "自分は他の誰よりも特別な運命を背負った「選ばれし者」だと信じている。", fy: {D:2} },
+        { t: "自分の領域に踏み込んでくる人間は、たとえ家族でも排除したくなる。", fy: {D:2} },
+        { t: "常に誰かの下について指示を待つ方が、自分には向いていると思う。", fn: {D:2} }, 
+        { t: "自分を批判する人間は、正当性に関係なく消え去るべき存在だと感じる。", fy: {D:2} },
+        { t: "初対面の相手を一瞬で「強者」か「弱者」かでランク付けしている。", fy: {D:2} },
+        { t: "孤独であることは強さの証であり、他人に頼ることは敗北だ。", fy: {D:2} },
+        { t: "地獄に落ちるとしても、他人を屈服させて王として君臨する道を選ぶ。", fy: {D:2} },
+        { t: "「ルール」や「道徳」は、凡人を管理するための家畜用の柵に過ぎない。", fy: {C:2} },
+        { t: "平穏な日常は精神的な死だ。常に混乱やリスクがないと満足できない。", fy: {C:2} },
+        { t: "激しい怒りを感じた時、相手の心が再起不能になるまで徹底的に破壊したい。", fy: {C:2} },
+        { t: "禁止されている場所や行為ほど、その背徳感に抗いがたい魅力を感じる。", fy: {C:2} },
+        { t: "他人が苦労して築き上げたものを一瞬で無に帰す破壊衝動がある。", fy: {C:2} },
+        { t: "何事においても、既存の秩序を守ることに誇りを感じる。", fn: {C:2} }, 
+        { t: "約束や規律を守ることより、その瞬間の直感に従う方が重要だ。", fy: {C:2} },
+        { t: "自分の美学に反するものは、社会的に正しくても徹底的に拒絶する。", fy: {C:2} },
+        { t: "燃え上がるようなトラブルの中にいる時こそ、自分が生きている実感が湧く。", fy: {C:2} },
+        { t: "世の中の不平等は、優れた者が富を独占するための正当なシステムだ。", fy: {C:2} },
+        { t: "鏡に映る自分は「何者にもなりうる役者」であり、真の素顔などない。", fy: {S:2} },
+        { t: "相手によって声や振る舞いを完璧に使い分けており、どれが本物か判らない。", fy: {S:2} },
+        { t: "自分をより優位に見せるためなら、過去の事実を脚色する。", fy: {S:2} },
+        { t: "常に最悪を想定し、周囲を自分を守るための「盾」として配置を考えている。", fy: {S:2} },
+        { t: "感情的に取り乱しているふりをして相手を困惑させ、有利に運ぶことがある。", fy: {S:2} },
+        { t: "どんな時も自分の本当の気持ちを、馬鹿正直に伝えるようにしている。", fn: {S:2} }, 
+        { t: "人の顔色を伺うのが得意すぎて、相手が欲しがる言葉が手に取るようにわかる。", fy: {S:2} },
+        { t: "他人のアイデアを自らのものとして発表し称賛されることに躊躇はない。", fy: {S:2} },
+        { t: "SNSなどで、理想の自分を作り上げる作業は楽しい。", fy: {S:2} },
+        { t: "今の質問に応えている自分さえも、偽りの姿であると感じる。", fy: {S:2} }
+    ];
+
+    let currentIdx = 0;
+    let scores = { M: 0, E: 0, D: 0, C: 0, S: 0 };
+    let typing = false;
+
+    const bgm = document.getElementById('bgm');
+    function startAudio() {
+        bgm.muted = false;
+        bgm.play().catch(e => console.log("Audio play failed: ", e));
+    }
+
+    function startQuiz() {
+        startAudio();
+        document.getElementById('start-screen').classList.add('hidden');
+        document.getElementById('quiz-screen').classList.remove('hidden');
+        document.getElementById('reload-container').classList.remove('hidden');
+        showQ();
+    }
+
+    function showQ() {
+        const q = questions[currentIdx];
+        document.getElementById('q-number').innerText = `PROTOCOL NO. ${String(currentIdx + 1).padStart(2, '0')}`;
+        // プログレスバー更新
+        const progress = (currentIdx / questions.length) * 100;
+        document.getElementById('progress-bar').style.width = `${progress}%`;
+        typeWriter();
+    }
+
+    function typeWriter() {
+        if(typing) return;
+        typing = true;
+        const qText = questions[currentIdx].t;
+        const el = document.getElementById('q-text');
+        el.innerText = "";
+        let i = 0;
+        const interval = setInterval(() => {
+            el.innerText += qText.charAt(i);
+            i++;
+            if(i >= qText.length) {
+                clearInterval(interval);
+                typing = false;
+            }
+        }, 25);
+    }
+
+    function handleAnswer(isYes) {
+        if(typing) return;
+        const q = questions[currentIdx];
+        const effects = isYes ? q.fy : q.fn;
+        if(effects) {
+            for(let k in effects) scores[k] += effects[k];
+        }
+        
+        currentIdx++;
+        if(currentIdx < questions.length) {
+            showQ();
+        } else {
+            document.getElementById('progress-bar').style.width = `100%`;
+            processResult();
+        }
+    }
+
+    function processResult() {
+        document.getElementById('quiz-screen').classList.add('hidden');
+        document.getElementById('reload-container').classList.add('hidden');
+        document.getElementById('loading-screen').classList.remove('hidden');
+        
+        let i = 0;
+        const msgs = ["意識層をスキャン中...", "情報の断片を統合中...", "社会的仮面を剥離中...", "深層心理プロファイル作成中..."];
+        const loadInterval = setInterval(() => {
+            document.getElementById('loading-msg').innerText = msgs[i];
+            i++;
+            if(i >= msgs.length) {
+                clearInterval(loadInterval);
+                showFinal();
+            }
+        }, 800);
+    }
+
+    // デコード演出関数
+    function decodeText(elementId, finalStr) {
+        const el = document.getElementById(elementId);
+        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789あいうえおかきくけこ";
+        let iterations = 0;
+        const interval = setInterval(() => {
+            el.innerText = finalStr.split("").map((char, index) => {
+                if(index < iterations) return char;
+                return chars[Math.floor(Math.random() * chars.length)];
+            }).join("");
+            if(iterations >= finalStr.length) clearInterval(interval);
+            iterations += 1/3;
+        }, 30);
+    }
+
+    function showFinal() {
+        document.getElementById('loading-screen').classList.add('hidden');
+        document.getElementById('result-screen').classList.remove('hidden');
+
+        // スコア集計ロジック修正: 偏りを防ぐためのキー検索
+        const sorted = Object.entries(scores).sort((a,b) => b[1] - a[1]);
+        const p = sorted[0][0]; // 1位のカテゴリ
+        const s = sorted[1][0]; // 2位のカテゴリ
+        
+        let key = p + s;
+        // キーが存在しない場合、入れ替えて再試行（これで全タイプを網羅）
+        if (!typeData[key]) {
+            key = s + p;
+        }
+        // それでも見つからない場合のフォールバック
+        const res = typeData[key] || typeData["MS"];
+
+        document.getElementById('res-img').src = res.img;
+        document.getElementById('res-img').style.filter = "grayscale(1) contrast(1.3)";
+        
+        // デコード演出を適用
+        decodeText('res-type', res.name);
+        
+        document.getElementById('res-catch').innerText = res.catch;
+        document.getElementById('res-core').innerText = res.core;
+        document.getElementById('res-persona').innerText = res.persona;
+        document.getElementById('res-relation').innerText = res.relation;
+        document.getElementById('res-risk').innerText = res.risk;
+
+        document.getElementById('abyss-warning').innerText = abyssWarnings[Math.floor(Math.random() * abyssWarnings.length)];
+    }
+
+    function shareX() {
+        const type = document.getElementById('res-type').innerText;
+        const text = `【THE ABYSS】私の深層心理は『${type}』でした。…あなたは自分の正体を知る勇気がありますか？\n#THEABYSS #深層心理診断`;
+        const url = window.location.href;
+        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
+    }
+
+    function copyLink() {
+        navigator.clipboard.writeText(window.location.href).then(() => {
+            alert("極秘URLをコピーしました。");
+        });
+    }
+</script>
+
+<style>
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+</style>
+
+</body>
+</html>
