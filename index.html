@@ -160,6 +160,13 @@
         .type-title { font-size: 2.8rem; color: var(--accent-color); text-align: center; margin: 0; font-weight: bold; letter-spacing: 10px; text-shadow: 0 0 20px rgba(170,0,0,0.4); }
         .type-subtitle { text-align: center; color: #888; font-size: 1rem; margin-bottom: 40px; letter-spacing: 2px; font-style: italic; }
 
+        /* 闇の構成比グラフ用スタイル */
+        .chart-container { margin-top: 40px; margin-bottom: 20px; }
+        .chart-row { margin-bottom: 15px; }
+        .chart-label-group { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.75rem; letter-spacing: 2px; color: #888; }
+        .chart-bar-bg { width: 100%; height: 8px; background: #111; border: 1px solid #222; position: relative; }
+        .chart-bar-fill { height: 100%; background: var(--accent-color); width: 0%; transition: width 1.5s cubic-bezier(0.1, 0, 0.3, 1); box-shadow: 0 0 10px rgba(170, 0, 0, 0.5); }
+
         .section-title { 
             border-left: 4px solid var(--accent-color); 
             padding-left: 15px; margin-top: 35px; margin-bottom: 15px;
@@ -194,7 +201,8 @@
 
         /* 警告ボックス */
         .warning-box {
-            border: 1px dashed var(--accent-color);
+            border: 1px solid var(--accent-color);
+            border-style: dashed;
             padding: 20px;
             margin: 30px 0;
             background: rgba(170, 0, 0, 0.05);
@@ -204,6 +212,8 @@
         .hidden { display: none !important; }
         
         #loading-msg { text-align: center; color: var(--accent-color); letter-spacing: 5px; margin-top: 25px; font-weight: bold; }
+
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
         @media (max-width: 600px) {
             .screen { padding: 25px; }
@@ -271,6 +281,31 @@
         <div id="res-type" class="type-title"></div>
         <div id="res-catch" class="type-subtitle"></div>
 
+        <!-- 追加：「あなたの闇の構成比」グラフ -->
+        <div class="section-title">■ あなたの闇の構成比 (COMPOSITION)</div>
+        <div class="chart-container" id="darkness-chart">
+            <div class="chart-row">
+                <div class="chart-label-group"><span>冷酷さ (EMPATHY GAP)</span><span id="score-E">0%</span></div>
+                <div class="chart-bar-bg"><div id="bar-E" class="chart-bar-fill"></div></div>
+            </div>
+            <div class="chart-row">
+                <div class="chart-label-group"><span>狡猾さ (MACHIAVELLIANISM)</span><span id="score-M">0%</span></div>
+                <div class="chart-bar-bg"><div id="bar-M" class="chart-bar-fill"></div></div>
+            </div>
+            <div class="chart-row">
+                <div class="chart-label-group"><span>支配欲 (DOMINATION)</span><span id="score-D">0%</span></div>
+                <div class="chart-bar-bg"><div id="bar-D" class="chart-bar-fill"></div></div>
+            </div>
+            <div class="chart-row">
+                <div class="chart-label-group"><span>破壊衝動 (CHAOS)</span><span id="score-C">0%</span></div>
+                <div class="chart-bar-bg"><div id="bar-C" class="chart-bar-fill"></div></div>
+            </div>
+            <div class="chart-row">
+                <div class="chart-label-group"><span>自己隠匿 (STEALTH)</span><span id="score-S">0%</span></div>
+                <div class="chart-bar-bg"><div id="bar-S" class="chart-bar-fill"></div></div>
+            </div>
+        </div>
+
         <div class="section-title">■ 深層心理の核心 (CORE)</div>
         <div id="res-core" class="section-content"></div>
 
@@ -301,8 +336,7 @@
 
 <script>
     // 診断データ
-    // 修正：画像をGitHubの相対パス（images/タイプ名.jpg）に変更
- const typeData = {
+    const typeData = {
         "MS": { 
             name: "情報詐欺師", 
             ratio: "出現率 12.5%", 
@@ -313,9 +347,10 @@
             persona: "非常に知的で洗練された、魅力的な人物を演じます。誰からも信頼され、相談役として重宝されることも多いでしょう。しかし、その穏やかな微笑みの裏側には、常に損得と確率を弾き出す冷徹な計算機が静かに鎮座しています。", 
             relation: "対人関係は、相手を「自分の駒として依存させる」か、あるいは「一時的に利用する」かの二択です。他者への深い愛着は、あなたの判断を狂わせる戦略的な脆弱性とみなされます。恩義を売ることで、見えない負債を相手に背負わせるのが得意です。", 
             career: "戦略コンサルタント、カリスマ的扇動家、影の黒幕、広報・プロパガンダ担当。", 
-            risk: "他人に合わせて最適な嘘を重ねすぎた結果、自分自身の本当の欲望や声さえもが、誰かからの借り物のように感じられる深刻な自己喪失に陥るリスクがあります。" 
-       img: "images/MS.jpg"
+            risk: "他人に合わせて最適な嘘を重ねすぎた結果、自分自身の本当の欲望や声さえもが、誰かからの借り物のように感じられる深刻な自己喪失に陥るリスクがあります。",
+            img: "images/MS.jpg"
         },
+     
         "ED": { 
             name: "評判の暗殺者", 
             ratio: "出現率 8.5%", 
@@ -326,9 +361,10 @@
             persona: "「公平無私」で「規律を重んじる」高潔な人物を体現します。周囲からは頼れるリーダーと見なされますが、実際は獲物の弱点やスキャンダルを収集し、抹殺の機会を静かに伺うハンターのような存在です。", 
             relation: "周囲の人間を常に監視し、密かにランク付けしています。一度「敵」あるいは「不要な存在」と見なした相手に対しては、一切の慈悲を見せず、外堀から埋めるように冷徹に排除します。対等な友情よりも、服従か排除を好みます。", 
             career: "内部監査人、検察官、辛辣な批評家、コンプライアンス責任者。", 
-            risk: "自ら定めた『完璧なルール』という名の監獄に自ら閉じ込められ、他人の自由や不完全さを一切許容できなくなり、最終的に孤立を招く恐れがあります。" 
-        img: "images/ED.jpg"
+            risk: "自ら定めた『完璧なルール』という名の監獄に自ら閉じ込められ、他人の自由や不完全さを一切許容できなくなり、最終的に孤立を招く恐れがあります。",
+            img: "images/ED.jpg"
         },
+     
         "MC": { 
             name: "思考の海賊", 
             ratio: "出現率 4.5%", 
@@ -336,12 +372,13 @@
             specialMsg: "人口のわずか4.5%の稀有な思考形態。", 
             catch: "「あなたの記憶も、あなたの思想も、元は私の持ち物だ。」", 
             core: "他者が心血を注いで生み出した独創的なアイデアや思想を、さも自分がゼロから生み出したかのように吸収し、自らの血肉とする精神的略奪者です。サンプリングと再構築の天才であり、オリジナルの持ち主よりも魅力的にその価値をプレゼンする能力に長けています。", 
-            persona: "自由奔放で天才肌、エキセントリックな芸術家を装います。借り物の言葉や思想を、さも自分の魂の叫びであるかのように劇的に演出することで、周囲の注目と賞賛を一身に集めます。", 
+            persona: "自由奔放で天才肌、エキcentricな芸術家を装います。借り物の言葉や思想を、さも自分の魂の叫びであるかのように劇的に演出することで、周囲の注目と賞賛を一身に集めます。", 
             relation: "他者の才能を徹底的に搾取する関係を築きます。利用価値があるうちは最大限の賞賛を与えますが、相手からすべてのアイデアを吸い尽くした後は、二度と視線を向けることはありません。", 
             career: "クリエイティブ・ディレクター、煽動家、トレンドセッター、ベンチャー投資家。", 
-            risk: "内面は常に空虚であり、真の独創性を突きつけられた際、激しい劣等感と恐怖で自己が崩壊する危険性を秘めています。" 
-        images/MC.jpg"
+            risk: "内面は常に空虚であり、真の独創性を突きつけられた際、激しい劣等感と恐怖で自己が崩壊する危険性を秘めています。", 
+            img: "images/MC.jpg"
         },
+     
         "SE": { 
             name: "見えない窃盗犯", 
             ratio: "最高難易度 出現率 3.5%", 
@@ -352,9 +389,10 @@
             persona: "目立たず、害のない、善良で控えめな人間を完璧に演じます。空気のように存在感を消して集団に溶け込み、誰からも警戒されることなく重要機密や他人の弱点を吸収し続けます。", 
             relation: "誰とも深く関わらないように見せつつ、実は全員の弱みを握っています。信頼という名の心の鍵を開け、情報を持ち出す技術に長けていますが、自分自身の心の内を見せることは万に一つもありません。", 
             career: "諜報員、情報仲介人、裏社会の会計士、セキュリティ・アナリスト。", 
-            risk: "誰からも真の意味で認識されない究極の孤独に陥り、自分が本当に存在しているのか確信が持てなくなる、透明な幽霊のような恐怖に苛まれることがあります。" 
-        img: "images/SE.jpg"
+            risk: "誰からも真の意味で認識されない究極の孤独に陥り、自分が本当に存在しているのか確信が持てなくなる、透明な幽霊のような恐怖に苛まれることがあります。", 
+            img: "images/SE.jpg"
         },
+     
         "DS": { 
             name: "深淵の独裁者", 
             ratio: "出現率 6.0%", 
@@ -365,9 +403,10 @@
             persona: "圧倒的な威風堂々としたリーダーシップを発揮します。迷える人々に明快な答えを与える救世主のように振る舞いますが、その真の目的は、他者の自己決定権を奪い、自分の手足として機能させることにあります。", 
             relation: "完全なる縦の関係、すなわち「主従」を求めます。対等な友人やパートナーシップは、あなたにとって反逆の予兆であり、不確実なリスクでしかありません。常に自分が優位に立てる相手を選んで周囲を固めます。", 
             career: "独裁的な経営者、カルト的政治家、宗教指導者、絶対的プロデューサー。", 
-            risk: "誰も心から信じることができない深い疑心暗鬼の中で、自らが築き上げた巨大な帝国の重みと孤独に押し潰されるリスクがあります。" 
-        img: "images/DS.jpg"
+            risk: "誰も心から信じることができない深い疑心暗鬼の中で、自らが築き上げた巨大な帝国の重みと孤独に押し潰されるリスクがあります。", 
+            img: "images/DS.jpg"
         },
+     
         "CD": { 
             name: "扇動の放火魔", 
             ratio: "出現率 4.0%", 
@@ -378,9 +417,10 @@
             persona: "情熱的なヒーロー、あるいは旧弊を打ち破る革命家として表舞台に現れます。しかし、その内実にあるのは理想社会の建設ではなく、単なる「燃え上がるカオス」への純粋な好奇心と破壊衝動です。", 
             relation: "共通の敵を作り出すことで人々を結束させ、最後に自分だけが安全な場所へ生き残るよう冷徹に仕向けます。人間関係を使い捨ての「燃料」程度にしか考えていません。", 
             career: "過激派活動家、ネット炎上の仕掛け人、革命家、ショック・ドクトリンの推進者。", 
-            risk: "自ら放った火がコントロールを失い、逃げ場のない場所で自分自身を焼き尽くしてしまう致命的なリスクを常に抱えています。" 
-        img: "images/CD.jpg"
+            risk: "自ら放った火がコントロールを失い、逃げ場のない場所で自分自身を焼き尽くしてしまう致命的なリスクを常に抱えています。", 
+            img: "images/CD.jpg"
         },
+     
         "SM": { 
             name: "仮面の偽造師", 
             ratio: "出現率 14.0%", 
@@ -391,9 +431,10 @@
             persona: "ターゲットの好みや思想、癖を瞬時に分析し、人格を数秒で再構成します。ある時は熱血な親友、ある時は冷徹な専門家。その演技に綻びはなく、誰もが「あなたこそが唯一の理解者だ」と錯覚します。", 
             relation: "相手はあなたに深い信頼と愛を寄せますが、あなたは相手の期待値を模倣しているに過ぎません。どんなに愛し合っている瞬間でも、あなたは脳内で別の役割を演じる準備をしています。", 
             career: "プロの詐欺師、潜入捜査官、名俳優、外交官、二重人格を使い分ける営業職。", 
-            risk: "自分が誰であるかを完全に忘却し、人生の終盤に「空っぽの器」しか残っていないことに気づく、精神的な虚無と死の恐怖が付きまといます。" 
-        img: "images/SM.jpg"
+            risk: "自分が誰であるかを完全に忘却し、人生の終盤に「空っぽの器」しか残っていないことに気づく、精神的な虚無と死の恐怖が付きまといます。", 
+            img: "images/SM.jpg"
         },
+     
         "ME": { 
             name: "冷徹な密輸商", 
             ratio: "出現率 7.5%", 
@@ -404,9 +445,10 @@
             persona: "極めて礼儀正しく、几帳面なビジネスマンとして振る舞います。しかしその瞳には、生命や愛に対する敬意が決定的に欠如しており、あらゆる事象を「利回り」と「回収可能性」で判定しています。", 
             relation: "すべての関係は契約に基づき、ドライです。感情的な貸し借りを嫌い、冷酷なまでにギブ・アンド・テイクを徹底します。親友であっても、支払いが滞れば即座に差し押さえの対象となります。", 
             career: "闇サイト運営、死の商人、非合法な情報屋、経営再建アドバイザー。", 
-            risk: "合理性を極限まで突き詰めた結果、人間としての情緒が完全に枯渇し、生きる意味さえ見失い、ただのデータの一部として消滅するリスクがあります。" 
-        img: "images/ME.jpg"
+            risk: "合理性を極限まで突き詰めた結果、人間としての情緒が完全に枯渇し、生きる意味さえ見失い、ただのデータの一部として消滅するリスクがあります。", 
+            img: "images/ME.jpg"
         },
+     
         "DE": { 
             name: "共鳴のカルト教祖", 
             ratio: "出現率 7.0%", 
@@ -417,9 +459,10 @@
             persona: "圧倒的な包容力と母性を感じさせる、慈愛に満ちた仮面を被っています。弱者に耳を傾け、肯定し、甘美な言葉で呪いをかけることで、相手の精神的な自立心を静かに、そして確実に破壊していきます。", 
             relation: "「教祖と狂信者」の関係しか構築できません。一度あなたの領域に入った者は、あなたの許可なく思考することさえ許されなくなります。自己肯定感を一度粉砕した後に、あなただけが与えられる承認で相手を飼い慣らします。", 
             career: "スピリチュアル指導者、マルチ商法のトップ、ブラック企業のカリスマ経営者。", 
-            risk: "自分を崇拝し、依存する存在がいなくなった瞬間、自分自身の形を定義できなくなる「共依存の果ての崩壊」という恐怖を抱えています。" 
-        img: "images/DE.jpg"
+            risk: "自分を崇拝し、依存する存在がいなくなった瞬間、自分自身の形を定義できなくなる「共依存の果ての崩壊」という恐怖を抱えています。", 
+            img: "images/DE.jpg"
         },
+     
         "CE": { 
             name: "背徳のギャンブラー", 
             ratio: "出現率 3.0%", 
@@ -430,9 +473,10 @@
             persona: "退廃的で、どこか刹那的な快楽主義者の雰囲気を纏います。常識を笑い飛ばし、奈落の縁を歩くような危うさが、逆に周囲を惹きつける抗いがたいデカダンスな魅力を放っています。", 
             relation: "相手を道連れにして、共倒れになるような破滅的な恋愛や友情を繰り返します。安定した幸せを「死」と同義と捉えており、関係が壊されることでしか、愛や情熱を実感することができません。", 
             career: "ハイリスクな投資家、危険地帯の戦場ジャーナリスト、破滅型アーティスト。", 
-            risk: "最後に残るのは何もかもを失った無一文の自分だけであり、誰からも顧みられない路地裏での野垂れ死に、あるいは自ら死を選ぶという結末への親和性が極めて高いです。" 
-        img: "images/CE.jpg"
+            risk: "最後に残るのは何もかもを失った無一文の自分だけであり、誰からも顧みられない路地裏での野垂れ死に、あるいは自ら死を選ぶという結末への親和性が極めて高いです。", 
+            img: "images/CE.jpg"
         },
+     
         "SD": { 
             name: "多重スパイ", 
             ratio: "出現率 11.5%", 
@@ -443,22 +487,24 @@
             persona: "有能で忠実な部下、あるいは信頼できる無二の親友として振る舞います。しかし、あなたが提供する情報は、相手を特定の方向へ誘導するための「毒の混じった餌」であることがほとんどです。", 
             relation: "常に裏切りの準備をしています。どれほど深い関係になっても、心の最深部にある「核」には誰も入れません。利害が一致しなくなった瞬間、昨日までの盟友を躊躇なく売り渡すことができます。", 
             career: "諜報機関のエージェント、M＆A仲介者、政界のフィクサー、リスクマネージャー。", 
-            risk: "どこにも所属できない、恒久的な帰属意識の欠如。一生涯、誰とも心を通わせることができないという「精神的な無国籍状態」に陥るリスクがあります。" 
-        img: "images/SD.jpg"
+            risk: "どこにも所属できない、恒久的な帰属意識の欠如。一生涯、誰とも心を通わせることができないという「精神的な無国籍状態」に陥るリスクがあります。", 
+            img: "images/SD.jpg"
         },
+     
         "CS": { 
             name: "異端のリバタリアン", 
             ratio: "【警告：超希少種】 0.7%", 
             isRare: true, 
             specialMsg: "【警告：超希少種】約1万人に7人の存在。現代社会では制御不能な究極の個人主義者。", 
             catch: "「自由を阻むものは、神であれ王であれ焼き払う。」", 
-            core: "既存のあらゆる秩序、ルール、道徳、そして「社会」というシステムそのものを、個人の自由を束縛する醜悪な枷として憎悪しています。あなたは他人に理解されることを望まず、ただ自分という存在を純化させ、誰にも依存せず支配されない「個」の完成を求めています。", 
+            core: "既存のあらゆる秩序、ルール、道徳、反映された「社会」というシステムそのものを、個人の自由を束縛する醜悪な枷として憎悪しています。あなたは他人に理解されることを望まず、ただ自分という存在を純化させ、誰にも依存せず支配されない「個」の完成を求めています。", 
             persona: "一見すると物静かで知的な個人主義者ですが、その内側には、他者を見下し、既存の価値観をゴミのように扱う傲慢なまでの自律心が渦巻いています。社会的な慣習を徹底的に無視します。", 
             relation: "対人関係を「脆弱さ」の始まりとして拒絶します。必要な時だけ一時的に他者と接続し、目的を果たした瞬間に、冷徹かつ鮮やかに一切の絆を切断します。誰かに愛されることすら、あなたには不快な拘束に感じられます。", 
             career: "孤高のハッカー、異端の哲学者、孤独なテロリスト、フリーランスの暗殺者。", 
-            risk: "完全に自由になった果てに、何の意味も持たない絶対的な虚無に到達し、生きる目的さえも消滅させてしまうという極限のリスクを背負っています。" 
-        img: "images/CS.jpg"
+            risk: "完全に自由になった果てに、何の意味も持たない絶対的な虚無に到達し、生きる目的さえも消滅させてしまうという極限のリスクを背負っています。", 
+            img: "images/CS.jpg"
         },
+     
         "ES": { 
             name: "沈黙の処刑人", 
             ratio: "【警告：超希少種】 0.9%", 
@@ -469,9 +515,10 @@
             persona: "感情の起伏が全く見えない、鋼のような仮面を被っています。死神に近い静謐なプレッシャーを放ち、周囲はあなたに近づくことさえ本能的に躊躇います。一切の弁明を許さない、絶対的な終止符のような存在です。", 
             relation: "人間味を排除した、純粋に機能的な繋がりしか持ちません。愛や友情といったあやふやな概念を理解する前に、あなたは「効率」と「結果」というコードを脳に書き込みました。家族さえも資産管理の対象です。", 
             career: "リストラ担当役員、過酷な刑罰の執行官、暗殺者、非情な資産整理人。", 
-            risk: "心が完全に石化し、自分が生きているのか、それとも精巧に動くただのプログラムなのかが判別できなくなる「生ける屍」としての末路を辿る可能性があります。" 
-        img: "images/ES.jpg"
+            risk: "心が完全に石化し、自分が生きているのか、それとも精巧に動くただのプログラムなのかが判別できなくなる「生ける屍」としての末路を辿る可能性があります。", 
+            img: "images/ES.jpg"
         },
+     
         "DM": { 
             name: "強欲な徴収官", 
             ratio: "出現率 3.5%", 
@@ -482,9 +529,10 @@
             persona: "一見すると羽振りの良いパトロンや、面倒見の良い実業家を演じます。しかしその正体は、相手が流す最後の一滴の血まで利子をつけて徴収しようとする、底なしの飢えを抱えた吸血鬼のような存在です。", 
             relation: "周囲を「債務者」として扱います。相手に小さな恩恵を与えては、一生消えない精神的な債務を負わせ、死ぬまで自分に奉仕させる奴隷のような関係を構築することを楽しみます。", 
             career: "冷酷な高利貸し、搾取型プラットフォームの創設者、遺産略奪専門家。", 
-            risk: "どれほど手に入れても満たされることのない、底なしの飢餓感。最終的にすべてを奪い尽くし、奪う相手さえいなくなった荒野で一人、飢えて死ぬリスクがあります。" 
-       img: "images/DM.jpg"
+            risk: "どれほど手に入れても満たされることのない、底なしの飢餓感。最終的にすべてを奪い尽くし、奪う相手さえいなくなった荒野で一人、飢えて死ぬリスクがあります。", 
+            img: "images/DM.jpg"
         },
+     
         "EC": { 
             name: "虚無の破壊者", 
             ratio: "【警告：最希少種】 0.5%", 
@@ -495,8 +543,8 @@
             persona: "現世のあらゆる事象に全く興味がないような、超越的な雰囲気を纏います。一見無害に見えますが、その脳内では常に、目の前の文明や組織、あるいは他者の平穏な人生を、最も美しく崩壊させるための起爆ポイントを計算しています。", 
             relation: "他者が心から大切にしているものを、目の前で無残に踏みにじり、相手が絶望に染まる反応を無機質な好奇心で観察します。あなたにとって愛とは、壊しがいのある頑丈な玩具に過ぎません。", 
             career: "市場を壊滅させる相場師、建物解体屋、過激な破壊芸術家、終末論的テロリスト。", 
-            risk: "破壊の対象が尽きたとき、残された唯一のターゲットである「自分自身」を破壊する以外に道がなくなる、究極の自己破滅的ニヒリズムが待っています。" 
-        img: "images/EC.jpg"
+            risk: "破壊の対象が尽きたとき、残された唯一のターゲットである「自分自身」を破壊する以外に道がなくなる、究極の自己破滅的ニヒリズムが待っています。", 
+            img: "images/EC.jpg"
         }
     };
 
@@ -597,7 +645,6 @@
     function showQ() {
         const q = questions[currentIdx];
         document.getElementById('q-number').innerText = `PROTOCOL NO. ${String(currentIdx + 1).padStart(2, '0')}`;
-        // プログレスバー更新
         const progress = (currentIdx / questions.length) * 100;
         document.getElementById('progress-bar').style.width = `${progress}%`;
         typeWriter();
@@ -654,7 +701,6 @@
         }, 800);
     }
 
-    // デコード演出関数
     function decodeText(elementId, finalStr) {
         const el = document.getElementById(elementId);
         const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789あいうえおかきくけこ";
@@ -673,23 +719,27 @@
         document.getElementById('loading-screen').classList.add('hidden');
         document.getElementById('result-screen').classList.remove('hidden');
 
-        // スコア集計ロジック: 偏りを防ぐためのキー検索
+        // スコア集計
         const sorted = Object.entries(scores).sort((a,b) => b[1] - a[1]);
-        const p = sorted[0][0]; // 1位のカテゴリ
-        const s = sorted[1][0]; // 2位のカテゴリ
+        const p = sorted[0][0];
+        const s = sorted[1][0];
         
         let key = p + s;
-        // キーが存在しない場合、入れ替えて再試行
-        if (!typeData[key]) {
-            key = s + p;
-        }
-        // それでも見つからない場合のフォールバック
+        if (!typeData[key]) key = s + p;
         const res = typeData[key] || typeData["MS"];
 
+        // 闇の構成比計算と表示
+        const keys = ['E', 'M', 'D', 'C', 'S'];
+        keys.forEach(k => {
+            // 各項目最大20点として計算
+            const percent = Math.min(Math.round((scores[k] / 20) * 100), 100);
+            document.getElementById(`score-${k}`).innerText = `${percent}%`;
+            setTimeout(() => {
+                document.getElementById(`bar-${k}`).style.width = `${percent}%`;
+            }, 500);
+        });
+
         document.getElementById('res-img').src = res.img;
-        document.getElementById('res-img').style.filter = "grayscale(1) contrast(1.3)";
-        
-        // デコード演出を適用
         decodeText('res-type', res.name);
         
         document.getElementById('res-catch').innerText = res.catch;
@@ -698,29 +748,27 @@
         document.getElementById('res-relation').innerText = res.relation;
         document.getElementById('res-risk').innerText = res.risk;
 
-        document.getElementById('abyss-warning').innerText = abyssWarnings[Math.floor(Math.random() * abyssWarnings.length)];
+        // 警告メッセージ
+        const randomWarning = abyssWarnings[Math.floor(Math.random() * abyssWarnings.length)];
+        document.getElementById('abyss-warning').innerText = randomWarning;
 
-        // 修正：最終メッセージの内容をセット
-        document.getElementById('final-message').innerText = "診断お疲れ様でした。あなたが直視したその姿は、社会があなたに押し付けた「善人」という化けの皮を剥ぎ取った、魂の原型です。\n\nこのアビス（深淵）が示したのは、あなたが窮地に立たされた時に発動する「真の生存戦略」に他なりません。悪と呼ばれようと、闇と呼ばれようと、それはあなたがこの残酷な世界を生き抜くために獲得した最強の武器なのです。\n\nさあ、その特別な「牙」を持って、外の世界に戻りなさい。";
+        // 最終メッセージ
+        const finalMsg = `【システムより最終通告】\nあなたのプロファイルは正常にアーカイブされました。\n属性：${res.name}\n${res.specialMsg}\n\nこれ以降、自身の言動には十分注意してください。深淵は常にあなたを注視しています。`;
+        document.getElementById('final-message').innerText = finalMsg;
     }
 
     function shareX() {
         const type = document.getElementById('res-type').innerText;
-        const text = `【THE ABYSS】私の深層心理は『${type}』でした。…あなたは自分の正体を知る勇気がありますか？\n#THEABYSS #深層心理診断`;
-        const url = window.location.href;
-        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
+        const text = `深層心理極秘診断報告：私の真の属性は【${type}】でした。…閲覧注意。 #THEABYSS #深層心理診断`;
+        const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(location.href)}`;
+        window.open(url, '_blank');
     }
 
     function copyLink() {
-        navigator.clipboard.writeText(window.location.href).then(() => {
-            alert("極秘URLをコピーしました。");
+        navigator.clipboard.writeText(location.href).then(() => {
+            alert("アクセスURLをクリップボードにコピーしました。");
         });
     }
 </script>
-
-<style>
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-</style>
-
 </body>
 </html>
