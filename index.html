@@ -174,17 +174,67 @@
         }
         .section-content { font-size: 0.95rem; line-height: 1.8; color: #bbb; text-align: justify; margin-bottom: 20px; }
 
-        /* 最終メッセージのスタイル */
-        .final-message-box {
+  
+　　　　/* 警告：恐怖感を煽るデザイン */
+        .warning-box {
+            border: 1px solid var(--accent-color);
+            padding: 25px;
+            margin: 40px 0;
+            background: rgba(30, 0, 0, 0.3);
+            position: relative;
+            box-shadow: inset 0 0 20px rgba(170, 0, 0, 0.2);
+        }
+        .warning-box::before {
+            content: "CRITICAL WARNING / SYSTEM INTERFERENCE";
+            display: block;
+            font-size: 0.6rem;
+            color: var(--accent-color);
+            margin-bottom: 15px;
+            letter-spacing: 2px;
+            border-bottom: 1px solid var(--accent-color);
+            padding-bottom: 5px;
+        }
+        .warning-text { 
+            color: #ff4444; 
+            font-size: 1rem; 
+            font-weight: bold;
+            line-height: 1.6; 
+            text-shadow: 2px 2px 0px #000;
+        }
+
+        /* 最終レポート：項目分けとデザインの両立 */
+        .final-report-container {
             margin-top: 50px;
-            padding: 30px;
-            border: 1px solid #222;
-            background: rgba(5, 5, 5, 0.5);
-            line-height: 1.8;
-            color: #999;
-            font-size: 0.9rem;
+            border: 1px solid #333;
+            background: #0a0a0a;
+            text-align: left;
+        }
+        .report-header {
+            background: #1a1a1a;
+            padding: 10px;
+            font-size: 0.7rem;
+            color: #666;
+            letter-spacing: 2px;
+            border-bottom: 1px solid #333;
+        }
+        .report-body { padding: 20px; }
+        .status-item {
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px dotted #222;
+            padding-bottom: 5px;
+        }
+        .status-label { color: #555; font-size: 0.75rem; }
+        .status-value { color: var(--accent-color); font-weight: bold; }
+        .final-comment-box {
+            margin-top: 20px;
+            padding: 20px;
+            font-size: 0.8rem;
+            color: #888;
             text-align: center;
-            white-space: pre-wrap;
+            border-top: 1px solid var(--accent-color);
+            background: linear-gradient(to bottom, rgba(170,0,0,0.1), transparent);
         }
 
         /* シェアボタン */
@@ -198,16 +248,6 @@
         .share-btn { font-size: 0.8rem; padding: 12px; }
         .btn-x { border-color: #555; color: #fff; }
         .btn-copy { border-color: #555; color: #fff; }
-
-        /* 警告ボックス */
-        .warning-box {
-            border: 1px solid var(--accent-color);
-            border-style: dashed;
-            padding: 20px;
-            margin: 30px 0;
-            background: rgba(170, 0, 0, 0.05);
-        }
-        .warning-text { color: #eee; font-size: 0.85rem; font-style: italic; line-height: 1.6; }
 
         .hidden { display: none !important; }
         
@@ -318,12 +358,35 @@
         <div class="section-title">■ 破滅へのトリガー (RISK)</div>
         <div id="res-risk" class="section-content"></div>
 
+        <!-- 修正：診断結果下部の最終メッセージを追加 -->
+    　　<!-- 警告文エリア -->
         <div class="warning-box">
             <div id="abyss-warning" class="warning-text"></div>
         </div>
 
-        <!-- 修正：診断結果下部の最終メッセージを追加 -->
-        <div id="final-message" class="final-message-box"></div>
+    <!-- 最終解析レポートエリア -->
+        <div class="final-report-container">
+            <div class="report-header">FINAL ANALYSIS REPORT</div>
+            <div class="report-body">
+                <div class="status-item">
+                    <span class="status-label">SUBJECT ATTRIBUTE:</span>
+                    <span id="final-type-name" class="status-value"></span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">ENCOUNTER RATE:</span>
+                    <span id="final-ratio" class="status-value"></span>
+                </div>
+                <!-- タイプ別の解説メッセージ -->
+                <div id="final-special-msg" style="font-size: 0.85rem; color: #bbb; line-height: 1.6; margin-top:10px;"></div>
+            </div>
+            
+            <!-- 【ここを変更】締めのメッセージ -->
+            <div class="final-comment-box" style="text-align: left; line-height: 1.8; color: #ccc;">
+                診断お疲れ様でした。あなたが直視したその姿は、社会があなたに押し付けた「善人」という化けの皮を剥ぎ取った、魂の原型です。<br><br>
+                このアビス（深淵）が示したのは、あなたが窮地に立たされた時に発動する「真の生存戦略」に他なりません。悪と呼ばれようと、闇と呼ばれようと、それはあなたがこの残酷な世界を生き抜くために獲得した最強の武器なのです。<br><br>
+                さあ、その特別な「牙」を持って、外の世界に戻りなさい。
+            </div>
+        </div>
 
         <div class="share-container">
             <button class="share-btn btn-x" onclick="shareX()">Xで報告</button>
@@ -761,15 +824,17 @@
         document.getElementById('res-relation').innerText = res.relation;
         document.getElementById('res-risk').innerText = res.risk;
 
-        // 警告メッセージ
+      
+    // 警告文の選定と表示
         const randomWarning = abyssWarnings[Math.floor(Math.random() * abyssWarnings.length)];
         document.getElementById('abyss-warning').innerText = randomWarning;
 
-        // 最終メッセージ
-        const finalMsg = `【システムより最終通告】\nあなたのプロファイルは正常にアーカイブされました。\n属性：${res.name}\n${res.specialMsg}\n\nこれ以降、自身の言動には十分注意してください。深淵は常にあなたを注視しています。`;
-        document.getElementById('final-message').innerText = finalMsg;
+        // 各項目への流し込み（新しいHTML構造に対応）
+        document.getElementById('final-type-name').innerText = res.name; // 属性名
+        document.getElementById('final-ratio').innerText = res.ratio;     // 出現率
+        document.getElementById('final-special-msg').innerText = res.specialMsg;
     }
-
+        
     function shareX() {
         const type = document.getElementById('res-type').innerText;
         const text = `深層心理極秘診断報告：私の真の属性は【${type}】でした。…閲覧注意。 #THEABYSS #深層心理診断`;
